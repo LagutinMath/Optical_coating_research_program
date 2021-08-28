@@ -12,7 +12,7 @@ class Design:
         if des_json is not None:
             self.materials = des_json
         elif des_name is not None:
-            with open(des_name + '.json', 'r') as file:
+            with open('Designs/' + des_name + '.json', 'r') as file:
                 self.materials = json.load(file)
         elif n_const is not None:
             self.q_n_const = True
