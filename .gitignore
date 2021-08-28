@@ -1,0 +1,17 @@
+.idea/
+.ipynb_checkpoints/
+Statistics001.txt
+TEST_calc_flux.ipynb
+TEST_simulation.ipynb
+__pycache__/
+descr_calc_TR.ipynb
+descr_simulation.ipynb
+main.py
+study_design.ipynb
+study_file.ipynb
+study_import.ipynb
+study_interpolate.ipynb
+study_json.ipynb
+study_perfomance_counter.ipynb
+study_random.ipynb
+test.ipynb
