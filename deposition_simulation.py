@@ -3,6 +3,7 @@
 # import math
 from design_class import *
 import copy
+from os import listdir
 
 
 class SetUpParameters:
@@ -327,6 +328,47 @@ class DataNonloc:
         return delta_t
 
 
+class SimInfo:
+    def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case):
+        self.N_layers = len(des_th_d) - 1
+        self.d_th = des_th_d
+        self.d_act = des_act_d
+        self.time_list = time_list_res
+        self.flux_meas = flux_meas_res
+        self.term_cond_case = term_cond_case
+        self.errors_d = des_act_d - des_th_d
+
+    def make_dict(self):
+        len_list = len(self.time_list)
+        time_list = len_list * [[]]
+        flux_meas = len_list * [[]]
+        for j in range(1, len_list):
+            time_list[j] = self.time_list[j].tolist()
+            flux_meas[j] = self.flux_meas[j].tolist()
+        sim_dict = {'time_list': time_list, 'flux_meas': flux_meas,
+                    'term_cond_case': self.term_cond_case.tolist(), 'errors_d': self.errors_d.tolist()}
+        return sim_dict
+
+    def save(self):
+        dir_file_names = listdir('Simulations/')
+        indx = 1
+        while indx < 1000:
+            file_name = 'Simulations/Simulation' + str(indx).zfill(3) + '.json'
+            is_name_in_dir = False
+            for name in dir_file_names:
+                is_name_in_dir = (('Simulations/' + name) == file_name)
+                if is_name_in_dir:
+                    break
+            if is_name_in_dir:
+                indx += 1
+                continue
+            else:
+                break
+
+        with open(file_name, 'w') as file:
+            json.dump(self.make_dict(), file, indent=3)
+
+
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
@@ -348,7 +390,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     time_list[1][0] = 0.0
 
     for j in range(1, des_th.N + 1):
-        print('j =', j)
+        # print('j =', j)
         nonloc_alg = DataNonloc(j, des_th, set_up_pars)
         term_cond = False
 
@@ -433,4 +475,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     flux_meas_res[j] = flux_meas[j][0:lsc]
                     break
 
-    return des_act.d, time_list_res, flux_meas_res, term_cond_case
+    res = SimInfo(des_th.d, des_act.d, time_list_res, flux_meas_res, term_cond_case)
+    return res
+
