@@ -50,7 +50,32 @@ class Design:
         return self.n_fix[0][layer_num]
 
     def thickness_plot(self):
-        plt.bar(range(1, self.N + 1), self.d[1:self.N + 1])
+        # Сделать картинку во весь экран для 27 дюймового монитора
+        # diag = math.sqrt(16**2 + 9**2)
+        # ipseg = 27/diag  # inches per segment
+        # fig = plt.figure('Thicknesses', figsize=(16 * ipseg, 9 * ipseg))
+
+        fig = plt.figure('Thicknesses', figsize=(16, 9))
+        ax = fig.add_subplot()
+        ax.bar(range(1, self.N + 1, 2), self.d[1:self.N + 1:2], color='b')
+        ax.bar(range(2, self.N + 1, 2), self.d[2:self.N + 1:2], color='r')
+        plt.xlabel('Layer number')
+        plt.ylabel('Physical thickness, nm')
+        # plt.title('Design physical thicknesses')
+        plt.show()
+
+    def spectral_plot(self, q_TR='T'):
+        fig = plt.figure('Spectral plot', figsize=(16, 9))
+        ax = fig.add_subplot()
+        N_pts = 1000
+        x_range = np.linspace(380, 760, N_pts)
+        y_range = N_pts * [0.0]
+        for i in range(N_pts):
+            y_range[i] = calc_flux(self, Wave(x_range[i]), q_percent=True, q_TR=q_TR)
+        ax.plot(x_range, y_range)
+        plt.xlabel('Wavelength, nm')
+        plt.ylabel('T, %')
+        # plt.title('Design physical thicknesses')
         plt.show()
 
 
