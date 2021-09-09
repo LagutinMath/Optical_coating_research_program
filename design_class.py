@@ -3,6 +3,7 @@ import math
 import numpy as np
 import json
 # from numba import njit
+import matplotlib.pyplot as plt
 
 
 class Design:
@@ -47,6 +48,10 @@ class Design:
                     f_interp = interp1d(layer_material["Table"]["wavelength"], layer_material["Table"]["n"])
                     self.n_fix[0][layer_num] = float(f_interp(wv.wavelength))
         return self.n_fix[0][layer_num]
+
+    def thickness_plot(self):
+        plt.bar(range(1, self.N + 1), self.d[1:self.N + 1])
+        plt.show()
 
 
 class Wave:
@@ -112,3 +117,4 @@ def calc_flux(des, wv, q_subs=True, q_percent=False, n_a=1, q_TR='both'):
         return 100.0 * T if q_percent else T
     elif q_TR == 'R':
         return 100.0 * R if q_percent else R
+
