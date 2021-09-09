@@ -234,6 +234,8 @@ class DataNonloc:
 
             if not (math.isnan(self.coef.abg[0]) or math.isnan(self.coef.abg[1]) or math.isnan(self.coef.abg[2])):
                 self.exist_coef = True
+                # (!) изменение коэф. alpha beta gamma должно вызывать пересчёт всех коэф. в NonlocCoef
+                self.coef.calc_Dthg()
 
     def flux(self, thickness, q_TR):
         """
@@ -369,6 +371,36 @@ class SimInfo:
             json.dump(self.make_dict(), file, indent=3)
 
 
+def calc_theor_coef(des_th):
+    waves = (None,) + 2 * (Wave(400),) + 32 * (Wave(605),) + 2 * (Wave(650),)
+    q_TR = (None,) + 36 * ('T',)
+    tau = 2.0
+    r_H = 0.5
+    r_L = 0.8
+    rates = (None,) + 18 * (r_H, r_L)
+    mono_width = 0.0
+    meas_sigmas = (None,) + 36 * (0.0,)
+    meas_syst = (None,) + 36 * (0.0,)
+    rates_sigmas = (None,) + 36 * (0.0,)
+    rates_syst = (None,) + 36 * (0.0,)
+    delay_time = 0
+
+    set_up_pars = SetUpParameters(waves, q_TR, tau, rates, mono_width, meas_sigmas, meas_syst, rates_sigmas,
+                                    rates_syst, delay_time)
+
+    des_act = copy.deepcopy(des_th)
+    des_act.d = np.zeros(des_th.N + 1, dtype=float)
+
+    for j in range(37):
+        dt = 0.0
+        nonloc_alg = DataNonloc(j, des_th, set_up_pars)
+        for i in range(15):
+            dt += 2.0
+            flux = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
+            nonloc_alg.refresh(dt, flux, set_up_pars.q_TR[j])
+
+
+
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
@@ -424,12 +456,26 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
             if not nonloc_alg.exist_coef:
                 continue
             elif not expected_interval:
+                # отладка rnd_seed = 10000000 + 38
+                # if j == 35:
+                #     print(lsc, 'T_act =', flux_act[j][lsc], 'T_meas =', flux_meas[j][lsc], 'T_nonloc = ',
+                #           nonloc_alg.flux(set_up_pars.rates[j] * dt, q_TR=set_up_pars.q_TR[j]))
+                #     print('T_max =', nonloc_alg.coef.flux_max('T'), 'T_min =', nonloc_alg.coef.flux_min('T'))
+                #     print('d_act = ', des_act.d[j], 'd_calc = ', set_up_pars.rates[j] * dt)
+
                 if des_act.d[j] < 0.7 * des_th.d[j]:
                     continue
                 else:
                     expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j])
 
             if expected_interval:
+                # отладка rnd_seed = 10000000 + 38
+                # if j == 35:
+                #     print(lsc, 'T_act =', flux_act[j][lsc], 'T_meas =', flux_meas[j][lsc], 'T_nonloc = ',
+                #           nonloc_alg.flux(set_up_pars.rates[j] * dt, q_TR=set_up_pars.q_TR[j]))
+                #     print('T_max =', nonloc_alg.coef.flux_max('T'), 'T_min =', nonloc_alg.coef.flux_min('T'))
+                #     print('d_act = ', des_act.d[j], 'd_calc = ', set_up_pars.rates[j] * dt)
+
                 if term_algs[j] == 'Elimination':
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
                     # print('term_flux_lvl =', term_flux_lvl)
@@ -477,4 +523,18 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
 
     res = SimInfo(des_th.d, des_act.d, time_list_res, flux_meas_res, term_cond_case)
     return res
+
+
+def collect_statistics(des_th, term_algs, set_up_pars, N_sim, start_rnd_seed=10000000):
+
+    # p1 = multiprocessing.Process(target=simulation, args=((des_th, term_algs, set_up_pars, start_rnd_seed),))
+    err_list = N_sim * [[]]
+
+    for x in range(N_sim):
+        rnd_seed = start_rnd_seed + x
+        res = simulation(des_th, term_algs, set_up_pars, rnd_seed)
+        err_list[x] = res.errors_d[1:des_th.N + 1].tolist()
+    return err_list
+
+
 
