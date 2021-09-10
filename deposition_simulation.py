@@ -33,8 +33,11 @@ class SetUpParameters:
         # индекс 0 незадействован для rates и пр.
         self.N = len(waves) - 1
 
+    def stratagy_spreadsheet_plot(self):
+        pass
 
-def num_step_estimation(des, set_up_pars):
+
+def num_step_estimation(des: Design, set_up_pars: SetUpParameters):
     """
     Вычисление оценки кол-ва шагов в предстоящей симуляции
     """
@@ -46,7 +49,7 @@ def num_step_estimation(des, set_up_pars):
     return 10 * math.ceil(total_time / tau)
 
 
-def num_step_layer_estimation(des, set_up_pars):
+def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
     """
     Возвращает лист нужный для генерации пустых списков для предстоящей симуляции
     первое число кол-во слоёв (кол-во строк)
@@ -65,7 +68,8 @@ def num_step_layer_estimation(des, set_up_pars):
 def norm_3sigma_rnd(rng, sigma):
     """
     Функция возвращает нормально распределенную случайную величину,
-    с нулевым мат.ожиданием и невыходящую за границы интервала [-3*sigma, 3*sigma]
+    с нулевым мат.ожиданием, которая модифицирована так, чтобы
+    значение не выходило за границы интервала [-3*sigma, 3*sigma]
     """
     rnd_val = rng.normal(0.0, sigma)
     if rnd_val > 3.0 * sigma:
@@ -76,7 +80,7 @@ def norm_3sigma_rnd(rng, sigma):
 
 
 # @njit(fastmath=True)
-def my_atan(x, y):
+def my_atan(x: float, y: float):
     if x > 0:
         if y >= 0:
             return math.atan(y / x)
@@ -89,7 +93,7 @@ def my_atan(x, y):
 
 
 # @njit(fastmath=True)
-def num_cutoffs(theta, phi):
+def num_cutoffs(theta: float, phi: float):
     """
     Количество точек pi * n принадлежащих (theta, theta + 2 * phi), где n --- целое
     """
@@ -175,6 +179,38 @@ class NonlocCoef:
         res = (1.0 + 1.0 / (self.Dthg[2] + self.Dthg[0])) if (q_TR == 'R') else (-1.0 / (self.Dthg[2] - self.Dthg[0]))
         return 100.0 * res if q_percent else res
 
+    def prev_extr(self, phi_act, q_TR):
+        self.calc_Dthg()
+        if math.floor((2 * phi_act + self.theta()) / np.pi) % 2 == 1:
+            if q_TR == 'R':
+                return self.flux_max(q_TR)
+            elif q_TR == 'T':
+                return self.flux_min(q_TR)
+        else:
+            if q_TR == 'R':
+                return self.flux_min(q_TR)
+            elif q_TR == 'T':
+                return self.flux_max(q_TR)
+
+
+def theor_nonloccoef(A_re: float, A_im: float, n_j: float, n_s: float):
+    """
+    Вычисляет нелок.коэф. по адмиттансу (с учетом отражения от задней стороны подложки)
+    :param A_re: Действительная часть адмиттанса
+    :param A_im: Мнимая часть адмиттанса
+    :param n_j: показатель преломления текущего слоя
+    :param n_s: показатель преломления
+    :return: Нелокальные коэффициенты
+    """
+    k_R = ((n_s - 1.) / (n_s + 1)) ** 2
+    rho = math.sqrt(A_re ** 2 + A_im ** 2)
+
+    alpha = (rho ** 2 - n_j ** 2) * (1. - n_j ** 2) / (8. * A_re * n_j ** 2)
+    beta = (1 - n_j ** 2) * A_im / (4. * n_j * A_re)
+    gamma = 0.5 + (1. / (k_R - 1.)) - ((rho ** 2 + n_j ** 2) * (1. + n_j ** 2) / (8. * A_re * n_j ** 2))
+
+    return NonlocCoef([alpha, beta, gamma])
+
 
 class DataNonloc:
     def __init__(self, j, des, set_up_pars):
@@ -251,7 +287,7 @@ class DataNonloc:
 
     def q_expected_interval(self, dt, d_th):
         """
-        сообщает находится ли в момент времени dt
+        Сообщает находится ли в момент времени dt
         процесс напыления в промежутке между теми экстремумами,
         где должен прекратиться процесс напыления
         :param dt: время прошедшее с начала напыления слоя
@@ -371,34 +407,75 @@ class SimInfo:
             json.dump(self.make_dict(), file, indent=3)
 
 
-def calc_theor_coef(des_th):
-    waves = (None,) + 2 * (Wave(400),) + 32 * (Wave(605),) + 2 * (Wave(650),)
-    q_TR = (None,) + 36 * ('T',)
-    tau = 2.0
-    r_H = 0.5
-    r_L = 0.8
-    rates = (None,) + 18 * (r_H, r_L)
-    mono_width = 0.0
-    meas_sigmas = (None,) + 36 * (0.0,)
-    meas_syst = (None,) + 36 * (0.0,)
-    rates_sigmas = (None,) + 36 * (0.0,)
-    rates_syst = (None,) + 36 * (0.0,)
-    delay_time = 0
+def increase_admittance(A_re, A_im, wavelength, d, n):
+    phi = (2. * np.pi / wavelength) * d * n
+    sin_phi = math.sin(phi)
+    cos_phi = math.cos(phi)
 
-    set_up_pars = SetUpParameters(waves, q_TR, tau, rates, mono_width, meas_sigmas, meas_syst, rates_sigmas,
-                                    rates_syst, delay_time)
+    A_re, A_im = (
+        A_re * n ** 2 / (
+                (A_re * sin_phi) ** 2 + (n * cos_phi - A_im * sin_phi) ** 2
+        ),
 
-    des_act = copy.deepcopy(des_th)
-    des_act.d = np.zeros(des_th.N + 1, dtype=float)
+        n * (n * A_im * (cos_phi ** 2 - sin_phi ** 2)
+             + cos_phi * sin_phi * (n ** 2 - A_re ** 2 - A_im ** 2)) / (
+                (A_re * sin_phi) ** 2 + (n * cos_phi - A_im * sin_phi) ** 2
+        )
+    )
+    return A_re, A_im
 
-    for j in range(37):
-        dt = 0.0
-        nonloc_alg = DataNonloc(j, des_th, set_up_pars)
-        for i in range(15):
-            dt += 2.0
-            flux = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
-            nonloc_alg.refresh(dt, flux, set_up_pars.q_TR[j])
 
+class MonochromStratagyInfo:
+    def __init__(self, des_th: Design, set_up_pars: SetUpParameters):
+        """
+        Содержит информацию о значениях энергетических коэф. T/R
+        в начале напыления слоя, в конце напыления слоя и экстремумы,
+        которые могут достигаться при достаточной толщине слоя
+        для заданной стратегии монохроматического мониторинга
+        в случае теоретического дизайна с однородными слоями
+        """
+        self.start = (des_th.N + 1) * [0.0]
+        self.max = (des_th.N + 1) * [0.0]
+        self.min = (des_th.N + 1) * [0.0]
+        self.term = (des_th.N + 1) * [0.0]
+        self.ampl = (des_th.N + 1) * [0.0]
+        self.prev_extr = (des_th.N + 1) * [0.0]
+
+        for j_cur in range(1, des_th.N + 1):
+            wavelength = set_up_pars.waves[j_cur].wavelength
+            n_s = des_th.n(0, set_up_pars.waves[j_cur])
+            A_re = n_s
+            A_im = 0.
+            for j in range(1, j_cur):
+                d = des_th.d[j]
+                n = des_th.n(j, set_up_pars.waves[j_cur])
+                A_re, A_im = increase_admittance(A_re, A_im, wavelength, d, n)
+
+            n_j_cur = des_th.n(j_cur, set_up_pars.waves[j_cur])
+
+            abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s)
+            abg.calc_Dthg()
+
+            if set_up_pars.q_TR[j_cur] == 'T':
+                self.start[j_cur] = - 1. / (abg.alpha() + abg.gamma())
+                self.max[j_cur] = - 1. / (abg.gamma() + abg.D())
+                self.min[j_cur] = - 1. / (abg.gamma() - abg.D())
+                self.ampl[j_cur] = self.max[j_cur] - self.min[j_cur]
+            else:
+                self.start[j_cur] = 1. + 1. / (abg.alpha() + abg.gamma())
+                self.max[j_cur] = 1. + 1. / (abg.gamma() - abg.D())
+                self.min[j_cur] = 1. + 1. / (abg.gamma() + abg.D())
+                self.ampl[j_cur] = self.max[j_cur] - self.min[j_cur]
+
+            d_j_cur = des_th.d[j_cur]
+            phi = (2. * np.pi / wavelength) * d_j_cur * n_j_cur
+
+            if set_up_pars.q_TR[j_cur] == 'T':
+                self.term[j_cur] = - 1. / (abg.alpha() * math.cos(2. * phi) + abg.beta() * math.sin(2. * phi) + abg.gamma())
+            else:
+                self.term[j_cur] = 1. + 1. / (abg.alpha() * math.cos(2. * phi) + abg.beta() * math.sin(2. * phi) + abg.gamma())
+
+            self.prev_extr[j_cur] = abg.prev_extr(phi, set_up_pars.q_TR[j_cur])
 
 
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
@@ -456,40 +533,21 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
             if not nonloc_alg.exist_coef:
                 continue
             elif not expected_interval:
-                # отладка rnd_seed = 10000000 + 38
-                # if j == 35:
-                #     print(lsc, 'T_act =', flux_act[j][lsc], 'T_meas =', flux_meas[j][lsc], 'T_nonloc = ',
-                #           nonloc_alg.flux(set_up_pars.rates[j] * dt, q_TR=set_up_pars.q_TR[j]))
-                #     print('T_max =', nonloc_alg.coef.flux_max('T'), 'T_min =', nonloc_alg.coef.flux_min('T'))
-                #     print('d_act = ', des_act.d[j], 'd_calc = ', set_up_pars.rates[j] * dt)
-
                 if des_act.d[j] < 0.7 * des_th.d[j]:
                     continue
                 else:
                     expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j])
 
             if expected_interval:
-                # отладка rnd_seed = 10000000 + 38
-                # if j == 35:
-                #     print(lsc, 'T_act =', flux_act[j][lsc], 'T_meas =', flux_meas[j][lsc], 'T_nonloc = ',
-                #           nonloc_alg.flux(set_up_pars.rates[j] * dt, q_TR=set_up_pars.q_TR[j]))
-                #     print('T_max =', nonloc_alg.coef.flux_max('T'), 'T_min =', nonloc_alg.coef.flux_min('T'))
-                #     print('d_act = ', des_act.d[j], 'd_calc = ', set_up_pars.rates[j] * dt)
-
                 if term_algs[j] == 'Elimination':
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
-                    # print('term_flux_lvl =', term_flux_lvl)
-                    # if j == 35:
-                    #     print('T(0) = ', nonloc_alg.flux(des_th.d[j] * 0.0, set_up_pars.q_TR[j]))
-                    #     print('T(1.0) = ', nonloc_alg.flux(des_th.d[j] * 1.0, set_up_pars.q_TR[j]))
-                    #     print('term_flux_lvl =', term_flux_lvl)
                 elif term_algs[j] == 'Quasiswing':
                     # Не готово
                     term_flux_lvl = 0.0
                 elif term_algs[j] == 'Pseudoswing':
                     # Не готово
                     term_flux_lvl = 0.0
-                elif term_algs[j] == 'None':
+                else:  # term_algs[j] == 'None':
                     # Не готово
                     term_flux_lvl = 0.0
 
