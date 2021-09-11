@@ -179,6 +179,9 @@ class NonlocCoef:
         res = (1.0 + 1.0 / (self.Dthg[2] + self.Dthg[0])) if (q_TR == 'R') else (-1.0 / (self.Dthg[2] - self.Dthg[0]))
         return 100.0 * res if q_percent else res
 
+    def ampl(self):
+        return self.flux_max() - self.flux_min()
+
     def prev_extr(self, phi_act, q_TR):
         self.calc_Dthg()
         if math.floor((2 * phi_act + self.theta()) / np.pi) % 2 == 1:
@@ -318,16 +321,7 @@ class DataNonloc:
 
     def prev_extr(self, dt, q_TR):
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
-        if math.floor((2 * phi_act + self.coef.theta()) / np.pi) % 2 == 1:
-            if q_TR == 'R':
-                return self.coef.flux_max(q_TR)
-            elif q_TR == 'T':
-                return self.coef.flux_min(q_TR)
-        else:
-            if q_TR == 'R':
-                return self.coef.flux_min(q_TR)
-            elif q_TR == 'T':
-                return self.coef.flux_max(q_TR)
+        return self.coef.prev_extr(phi_act, q_TR)
 
     def q_pass_term_flux_lvl(self, dt, term_flux_lvl, q_TR):
         flux_cur = self.flux(self.r * dt, q_TR)
@@ -479,6 +473,7 @@ class MonochromStratagyInfo:
 
 
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
+    str_info = MonochromStratagyInfo(des_th, set_up_pars)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
@@ -542,8 +537,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                 if term_algs[j] == 'Elimination':
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
                 elif term_algs[j] == 'Quasiswing':
-                    # Не готово
-                    term_flux_lvl = 0.0
+                    turn = nonloc_alg.prev_extr(dt, set_up_pars.q_TR[j])
+                    ampl = nonloc_alg.coef.ampl()
+                    term_flux_lvl = turn - (str_info.prev_extr[j] - str_info.term[j]) * (ampl / str_info.ampl[j])
                 elif term_algs[j] == 'Pseudoswing':
                     # Не готово
                     term_flux_lvl = 0.0
