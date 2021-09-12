@@ -348,7 +348,7 @@ class DataNonloc:
         return delta_t
 
 
-def find_file_name(obj_name: str):
+def find_file_name(obj_name: str, ext='.json'):
     """
     Ищет и возвращает свободное имя в папке *имя объекта*s
     Пример: obj_name = 'Simulation', первое возвращенное имя будет:
@@ -356,10 +356,10 @@ def find_file_name(obj_name: str):
     """
     dir_file_names = listdir(obj_name + 's/')
     indx = 1
-    file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + '.json'
+    file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + ext
 
     while indx < 1000:
-        file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + '.json'
+        file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + ext
         is_name_in_dir = False
         for name in dir_file_names:
             is_name_in_dir = ((obj_name + 's/' + name) == file_name)
@@ -606,7 +606,7 @@ class StatInfo:
             file.close()
 
     def save_plain_txt(self):
-        file_name = find_file_name('Statistic').replace('.json', '.txt')
+        file_name = find_file_name('Statistic', ext='.txt')
 
         n = len(self.err_list)
         m = len(self.err_list[0])
