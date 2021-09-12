@@ -307,21 +307,6 @@ class DataNonloc:
         else:
             return False
 
-    # def q_pass_term_flux_lvl(self, dt, term_flux_lvl, q_TR):
-    #     raw_phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
-    #     phi_act = raw_phi_act - 0.5 * np.pi * num_cutoffs(0.0, raw_phi_act)
-    #     print('raw_phi_act =', raw_phi_act / np.pi)
-    #     print('phi_act =', phi_act/np.pi)
-    #     if q_TR == 'R':
-    #         temp = (1.0 / (term_flux_lvl - 1.0) - self.coef.gamma()) / self.coef.D()
-    #     else:
-    #         temp = (1.0 / (- term_flux_lvl) - self.coef.gamma()) / self.coef.D()
-    #     raw_phi_lvl = 0.5 * (math.acos(temp) - self.coef.theta())
-    #     phi_lvl = raw_phi_lvl - 0.5 * np.pi * num_cutoffs(0.0, raw_phi_lvl)
-    #     print('raw_phi_lvl =', raw_phi_lvl / np.pi)
-    #     print('phi_lvl =', phi_lvl / np.pi)
-    #     return phi_lvl < phi_act
-
     def prev_extr(self, dt, q_TR):
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
         return self.coef.prev_extr(phi_act, q_TR)
@@ -363,6 +348,32 @@ class DataNonloc:
         return delta_t
 
 
+def find_file_name(obj_name: str):
+    """
+    Ищет и возвращает свободное имя в папке *имя объекта*s
+    Пример: obj_name = 'Simulation', первое возвращенное имя будет:
+    'Simulations/Simulation001.json'
+    """
+    dir_file_names = listdir(obj_name + 's/')
+    indx = 1
+    file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + '.json'
+
+    while indx < 1000:
+        file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + '.json'
+        is_name_in_dir = False
+        for name in dir_file_names:
+            is_name_in_dir = ((obj_name + 's/' + name) == file_name)
+            if is_name_in_dir:
+                break
+        if is_name_in_dir:
+            indx += 1
+            continue
+        else:
+            break
+
+    return file_name
+
+
 class SimInfo:
     def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case):
         self.N_layers = len(des_th_d) - 1
@@ -385,23 +396,11 @@ class SimInfo:
         return sim_dict
 
     def save(self):
-        dir_file_names = listdir('Simulations/')
-        indx = 1
-        while indx < 1000:
-            file_name = 'Simulations/Simulation' + str(indx).zfill(3) + '.json'
-            is_name_in_dir = False
-            for name in dir_file_names:
-                is_name_in_dir = (('Simulations/' + name) == file_name)
-                if is_name_in_dir:
-                    break
-            if is_name_in_dir:
-                indx += 1
-                continue
-            else:
-                break
+        file_name = find_file_name('Simulation')
 
         with open(file_name, 'w') as file:
             json.dump(self.make_dict(), file, indent=3)
+            file.close()
 
 
 def increase_admittance(A_re, A_im, wavelength, d, n):
@@ -547,11 +546,11 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     # Не готово
                     term_flux_lvl = 0.0
                 else:  # term_algs[j] == 'None':
-                    # Не готово
-                    term_flux_lvl = 0.0
+                    term_flux_lvl = str_info.term[j]
 
                 if nonloc_alg.q_pass_term_flux_lvl(dt + delta_t, term_flux_lvl, set_up_pars.q_TR[j]):
                     # Termination case 1
+                    # Правильный случай прекращения напыления по уровню
                     term_cond = True
                     term_cond_case[j] = 1
 
@@ -565,11 +564,13 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
 
                 elif nonloc_alg.q_pass_term_flux_lvl(dt, term_flux_lvl, set_up_pars.q_TR[j]):
                     # Termination case 2
+                    # На очередном шаге было обнаружено, что произошло перепыление
                     term_cond = True
                     term_cond_case[j] = 2
 
                 elif des_act.d[j] > 1.25 * des_th.d[j]:
                     # Termination case 3
+                    # Экстренное прекращение напыления --- остальные критерии не сработали
                     term_cond = True
                     term_cond_case[j] = 3
 
@@ -582,16 +583,52 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     return res
 
 
+class StatInfo:
+    def __init__(self, des_th: Design, term_algs, set_up_pars, err_list, start_rnd_seed):
+        self.err_list = err_list
+        self.start_rnd_seed = start_rnd_seed
+        self.des = des_th
+        self.set_up_pars = set_up_pars
+        self.term_algs = term_algs
+
+        self.N_sim = len(err_list)
+
+    def make_dict(self):
+        stat_dict = {'design': self.des.name, 'start_rnd_seed': self.start_rnd_seed, 'error list': self.err_list,
+                     'term_algs': self.term_algs}
+        return stat_dict
+
+    def save(self):
+        file_name = find_file_name('Statistic')
+
+        with open(file_name, 'w') as file:
+            json.dump(self.make_dict(), file, indent=3)
+            file.close()
+
+    def save_plain_txt(self):
+        file_name = find_file_name('Statistic').replace('.json', '.txt')
+
+        n = len(self.err_list)
+        m = len(self.err_list[0])
+
+        with open(file_name, 'w') as file:
+            for i in range(n):
+                for j in range(m):
+                    print(self.err_list[i][j], end='\t', file=file)
+                print('', file=file)
+            file.close()
+
+
 def collect_statistics(des_th, term_algs, set_up_pars, N_sim, start_rnd_seed=10000000):
 
-    # p1 = multiprocessing.Process(target=simulation, args=((des_th, term_algs, set_up_pars, start_rnd_seed),))
     err_list = N_sim * [[]]
 
     for x in range(N_sim):
         rnd_seed = start_rnd_seed + x
         res = simulation(des_th, term_algs, set_up_pars, rnd_seed)
         err_list[x] = res.errors_d[1:des_th.N + 1].tolist()
-    return err_list
+
+    return StatInfo(des_th, term_algs, set_up_pars, err_list, start_rnd_seed)
 
 
 

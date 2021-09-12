@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 class Design:
     def __init__(self, des_name=None, thicknesses=None, n_const=None, des_json=None):
         self.q_n_const = False
+        self.name = ''
 
         if des_json is not None:
             self.materials = des_json
         elif des_name is not None:
+            self.name = des_name
             with open('Designs/' + des_name + '.json', 'r') as file:
                 self.materials = json.load(file)
         elif n_const is not None:
