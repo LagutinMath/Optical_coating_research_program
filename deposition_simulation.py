@@ -33,7 +33,7 @@ class SetUpParameters:
         # индекс 0 незадействован для rates и пр.
         self.N = len(waves) - 1
 
-    def stratagy_spreadsheet_plot(self):
+    def strategy_spreadsheet_plot(self):
         pass
 
 
