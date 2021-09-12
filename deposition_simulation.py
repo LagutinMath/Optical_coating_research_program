@@ -34,6 +34,9 @@ class SetUpParameters:
         self.N = len(waves) - 1
 
     def strategy_spreadsheet_plot(self):
+        """
+        Построение кривой монохроматического мониторинга
+        """
         pass
 
 
@@ -198,7 +201,7 @@ class NonlocCoef:
 
 def theor_nonloccoef(A_re: float, A_im: float, n_j: float, n_s: float):
     """
-    Вычисляет нелок.коэф. по адмиттансу (с учетом отражения от задней стороны подложки)
+    Вычисляет нелок.коэф-ты по адмиттансу (с учетом отражения от задней стороны подложки)
     :param A_re: Действительная часть адмиттанса
     :param A_im: Мнимая часть адмиттанса
     :param n_j: показатель преломления текущего слоя
@@ -419,7 +422,7 @@ def increase_admittance(A_re, A_im, wavelength, d, n):
     return A_re, A_im
 
 
-class MonochromStratagyInfo:
+class MonochromStrategyInfo:
     def __init__(self, des_th: Design, set_up_pars: SetUpParameters):
         """
         Содержит информацию о значениях энергетических коэф. T/R
@@ -473,7 +476,7 @@ class MonochromStratagyInfo:
 
 
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
-    str_info = MonochromStratagyInfo(des_th, set_up_pars)
+    str_info = MonochromStrategyInfo(des_th, set_up_pars)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
