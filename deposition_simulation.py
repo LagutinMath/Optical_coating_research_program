@@ -128,10 +128,12 @@ class NonlocCoef:
         либо как Dthg = (D, theta, gamma)
         """
         if abg is None:
-            self.abg = [0.0, 0.0, 0.0]
+            self.abg = [1.0, 1.0, 1.0]
         else:
             self.abg = abg
         self.Dthg = Dthg
+
+        self.calc_Dthg()
 
     def alpha(self):
         if self.abg is None:
@@ -316,7 +318,7 @@ class DataNonloc:
         flux_prev_extr = self.prev_extr(dt, q_TR)
         return ((flux_prev_extr - term_flux_lvl) * (flux_cur - term_flux_lvl)) < 0.0
 
-    def calc_delta_t(self, dt, term_flux_lvl, q_TR):
+    def calc_delta_t(self, dt, term_flux_lvl, q_TR, tau=2.0):
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
         if q_TR == 'R':
             temp = (1.0 / (term_flux_lvl - 1.0) - self.coef.gamma()) / self.coef.D()
@@ -326,26 +328,41 @@ class DataNonloc:
         phi_lvl_p = 0.5 * (math.acos(temp) - self.coef.theta())
         # - solution
         phi_lvl_n = - 0.5 * (math.acos(temp) + self.coef.theta())
-        if q_TR == 'R':
-            if (term_flux_lvl - self.prev_extr(dt, q_TR) >= 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) >= 0.0):
-                q_p_sol = True
-            elif (term_flux_lvl - self.prev_extr(dt, q_TR) < 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) < 0.0):
-                q_p_sol = True
-            else:
-                q_p_sol = False
+        # if q_TR == 'R':
+        #     if (term_flux_lvl - self.prev_extr(dt, q_TR) >= 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) >= 0.0):
+        #         q_p_sol = True
+        #     elif (term_flux_lvl - self.prev_extr(dt, q_TR) < 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) < 0.0):
+        #         q_p_sol = True
+        #     else:
+        #         q_p_sol = False
+        # else:
+        #     if (term_flux_lvl - self.prev_extr(dt, q_TR) >= 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) < 0.0):
+        #         q_p_sol = True
+        #     elif (term_flux_lvl - self.prev_extr(dt, q_TR) < 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) >= 0.0):
+        #         q_p_sol = True
+        #     else:
+        #         q_p_sol = False
+        #
+        # phi_lvl = phi_lvl_p if q_p_sol else phi_lvl_n
+        #
+        # delta_phi = (phi_lvl - phi_act) - 0.5 * np.pi * math.floor(2 * (phi_lvl - phi_act)/np.pi)
+        # delta_t = delta_phi * self.wavelength / (self.n * self.r * 2 * np.pi)
+
+        # Грубое решение о выборе корня
+        phi_lvl = phi_lvl_p
+        delta_phi = (phi_lvl - phi_act) - np.pi * math.floor((phi_lvl - phi_act)/np.pi)
+        delta_t_p = delta_phi * self.wavelength / (self.n * self.r * 2 * np.pi)
+
+        phi_lvl = phi_lvl_n
+        delta_phi = (phi_lvl - phi_act) - np.pi * math.floor((phi_lvl - phi_act) / np.pi)
+        delta_t_n = delta_phi * self.wavelength / (self.n * self.r * 2 * np.pi)
+
+        if (delta_t_p >= 0.) and (delta_t_p <= tau):
+            return delta_t_p
+        elif (delta_t_n >= 0.) and (delta_t_n <= tau):
+            return delta_t_n
         else:
-            if (term_flux_lvl - self.prev_extr(dt, q_TR) >= 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) < 0.0):
-                q_p_sol = True
-            elif (term_flux_lvl - self.prev_extr(dt, q_TR) < 0.0) and (math.sin(2 * phi_lvl_p + self.coef.theta()) >= 0.0):
-                q_p_sol = True
-            else:
-                q_p_sol = False
-
-        phi_lvl = phi_lvl_p if q_p_sol else phi_lvl_n
-
-        delta_phi = (phi_lvl - phi_act) - 0.5 * np.pi * math.floor(2 * (phi_lvl - phi_act)/np.pi)
-        delta_t = delta_phi * self.wavelength / (self.n * self.r * 2 * np.pi)
-        return delta_t
+            return 0.0
 
 
 def find_file_name(obj_name: str, ext='.json'):
@@ -579,8 +596,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     flux_meas_res[j] = flux_meas[j][0:lsc]
                     break
 
-    res = SimInfo(des_th.d, des_act.d, time_list_res, flux_meas_res, term_cond_case)
-    return res
+    return SimInfo(des_th.d, des_act.d, time_list_res, flux_meas_res, term_cond_case)
 
 
 class StatInfo:
