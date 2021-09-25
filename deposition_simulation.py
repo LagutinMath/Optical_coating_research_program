@@ -4,6 +4,7 @@
 from design_class import *
 import copy
 from os import listdir
+from matplotlib.animation import FuncAnimation
 
 
 class SetUpParameters:
@@ -418,6 +419,36 @@ class SimInfo:
         with open(file_name, 'w') as file:
             json.dump(self.make_dict(), file, indent=3)
             file.close()
+
+    def animation(self, j=1):
+        """
+        Анимация напыления j-ого слоя
+        """
+        x_len = len(self.time_list[j])
+        x_min = self.time_list[j][0]
+        x_max = self.time_list[j][x_len - 1]
+
+        fig, ax = plt.subplots()
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(0., 1.)
+        line, = ax.plot(0., 0.)
+
+        x_data = []
+        y_data = []
+
+        def animation_frame(i: int):
+            """
+            Отрисовка линии до i_end точки на j-ом слое
+            """
+            x_data.append(self.time_list[j][i])
+            y_data.append(self.flux_meas[j][i])
+
+            line.set_xdata(x_data)
+            line.set_ydata(y_data)
+            return line,
+
+        animation = FuncAnimation(fig, func=animation_frame, frames=range(x_len), interval=100)
+        plt.show()
 
 
 def increase_admittance(A_re, A_im, wavelength, d, n):
