@@ -400,7 +400,8 @@ class SimInfo:
         self.time_list = time_list_res
         self.flux_meas = flux_meas_res
         self.term_cond_case = term_cond_case
-        self.errors_d = des_act_d - des_th_d
+        # self.errors_d = des_act_d - des_th_d
+        self.errors_d = [d_act - d_th for (d_act, d_th) in list(zip(*[des_act_d, des_th_d]))]
 
     def make_dict(self):
         len_list = len(self.time_list)
@@ -527,21 +528,25 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
+    max_steps = len_sim_list[1]
 
-    time_list = np.empty(len_sim_list, dtype=float)
-    flux_meas = np.empty(len_sim_list, dtype=float)
-    flux_act = np.empty(len_sim_list, dtype=float)
+    # time_list = np.empty(len_sim_list, dtype=float)
+    # flux_meas = np.empty(len_sim_list, dtype=float)
+    # flux_act = np.empty(len_sim_list, dtype=float)
 
-    time_list_res = (des_th.N + 1) * [[]]
-    flux_meas_res = (des_th.N + 1) * [[]]
+    time_list = (des_th.N + 1) * [[]]
+    flux_meas = (des_th.N + 1) * [[]]
+    flux_act = (des_th.N + 1) * [[]]
 
     # Информация о дизайне в текущий для симуляции момент времени
     des_act = copy.deepcopy(des_th)
-    des_act.d = np.zeros(des_th.N + 1, dtype=float)
+    # des_act.d = np.zeros(des_th.N + 1, dtype=float)
+    des_act.d = (des_th.N + 1) * [0.0]
 
-    term_cond_case = np.zeros(des_th.N + 1, dtype=float)
+    # term_cond_case = np.zeros(des_th.N + 1, dtype=float)
+    term_cond_case = (des_th.N + 1) * [0.0]
 
-    time_list[1][0] = 0.0
+    time_list[1].append(0.0)
 
     for j in range(1, des_th.N + 1):
         # print('j =', j)
@@ -556,24 +561,24 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
         expected_interval = False
 
         # шаг *измерения и анализа*
-        lsc = 0  # layer_step_counter
-        flux_act[j][lsc] = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
-        flux_meas[j][lsc] = flux_act[j, lsc] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j])
-        nonloc_alg.refresh(dt, flux_meas[j][lsc], set_up_pars.q_TR[j])
+        # lsc = 0  # layer_step_counter
+        flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
+        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+        nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
         # напыление слоя
-        while not term_cond:
+        # while not term_cond:
+        for lsc in range(1, max_steps):
             # шаг *изменения состояния природы*
             dt += delta_t
             cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, set_up_pars.rates_sigmas[j])
             des_act.increase_layer_thickness(j, delta_t * cur_rate)
 
             # шаг *измерения и анализа*
-            lsc += 1
-            time_list[j][lsc] = time_list[j][lsc - 1] + delta_t
-            flux_act[j][lsc] = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
-            flux_meas[j][lsc] = flux_act[j, lsc] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j])
-            nonloc_alg.refresh(dt, flux_meas[j][lsc], set_up_pars.q_TR[j])
+            time_list[j].append(time_list[j][-1] + delta_t)
+            flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
+            flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+            nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
             if not nonloc_alg.exist_coef:
                 continue
@@ -593,8 +598,11 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                 elif term_algs[j] == 'Pseudoswing':
                     # Не готово
                     term_flux_lvl = 0.0
-                else:  # term_algs[j] == 'None':
+                elif term_algs[j] == 'None':
                     term_flux_lvl = str_info.term[j]
+                else:
+                    print('Uncorrect termination algoritm for layer', j)
+                    break  # место в будущем для практики выкидывания ошибок
 
                 if nonloc_alg.q_pass_term_flux_lvl(dt + delta_t, term_flux_lvl, set_up_pars.q_TR[j]):
                     # Termination case 1
@@ -603,8 +611,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     term_cond_case[j] = 1
 
                     delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j])
-                    if j < des_th.N:
-                        time_list[j + 1][0] = time_list[j][lsc] + delta_t
 
                     # шаг *изменения состояния природы*
                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, set_up_pars.rates_sigmas[j])
@@ -623,11 +629,16 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     term_cond_case[j] = 3
 
                 if term_cond:
-                    time_list_res[j] = time_list[j][0:lsc]
-                    flux_meas_res[j] = flux_meas[j][0:lsc]
+                    if j < des_th.N:
+                        if term_cond_case[j] == 1:
+                            time_list[j + 1].append(time_list[j][-1] + delta_t)
+                        else:
+                            time_list[j + 1].append(time_list[j][-1])
                     break
+        else:
+            print('Overflow simulation error on seed =', rnd_seed)
 
-    return SimInfo(des_th.d, des_act.d, time_list_res, flux_meas_res, term_cond_case)
+    return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case)
 
 
 class StatInfo:
