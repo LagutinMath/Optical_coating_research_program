@@ -305,9 +305,8 @@ class DataNonloc:
         """
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
         phi_th = self.n * d_th * 2 * np.pi / self.wavelength
-        theta = self.coef.theta()
 
-        if num_cutoffs(theta_th, phi_act) == num_cutoffs(theta, phi_th):
+        if num_cutoffs(theta_th, phi_act) == num_cutoffs(theta_th, phi_th):
             return True
         else:
             return False
