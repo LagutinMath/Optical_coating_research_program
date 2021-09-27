@@ -294,18 +294,20 @@ class DataNonloc:
             ans = -1.0 / (self.coef.D() * math.cos(2 * d_phi + self.coef.theta()) + self.coef.gamma())
         return ans
 
-    def q_expected_interval(self, dt, d_th):
+    def q_expected_interval(self, dt, d_th, *, theta_th):
         """
         Сообщает находится ли в момент времени dt
         процесс напыления в промежутке между теми экстремумами,
         где должен прекратиться процесс напыления
         :param dt: время прошедшее с начала напыления слоя
         :param d_th: толщина теоретического дизайна
+        :param theta_th: оценка теоретического theta на слое
         """
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
         phi_th = self.n * d_th * 2 * np.pi / self.wavelength
         theta = self.coef.theta()
-        if num_cutoffs(theta, phi_act) == num_cutoffs(theta, phi_th):
+
+        if num_cutoffs(theta_th, phi_act) == num_cutoffs(theta, phi_th):
             return True
         else:
             return False
@@ -411,7 +413,7 @@ class SimInfo:
             time_list[j] = self.time_list[j].tolist()
             flux_meas[j] = self.flux_meas[j].tolist()
         sim_dict = {'time_list': time_list, 'flux_meas': flux_meas,
-                    'term_cond_case': self.term_cond_case.tolist(), 'errors_d': self.errors_d.tolist()}
+                    'term_cond_case': self.term_cond_case, 'errors_d': self.errors_d}
         return sim_dict
 
     def save(self):
@@ -448,7 +450,7 @@ class SimInfo:
             line.set_ydata(y_data)
             return line,
 
-        animation = FuncAnimation(fig, func=animation_frame, frames=range(x_len), interval=100)
+        animation = FuncAnimation(fig, func=animation_frame, frames=range(x_len), interval=1)
         plt.show()
 
 
@@ -486,6 +488,8 @@ class MonochromStrategyInfo:
         self.ampl = (des_th.N + 1) * [0.0]
         self.prev_extr = (des_th.N + 1) * [0.0]
 
+        self.nonloc_coef = (des_th.N + 1) * [[]]
+
         for j_cur in range(1, des_th.N + 1):
             wavelength = set_up_pars.waves[j_cur].wavelength
             n_s = des_th.n(0, set_up_pars.waves[j_cur])
@@ -500,6 +504,7 @@ class MonochromStrategyInfo:
 
             abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s)
             abg.calc_Dthg()
+            self.nonloc_coef[j_cur] = [abg.alpha(), abg.beta(), abg.gamma(), abg.D(), abg.theta()]
 
             if set_up_pars.q_TR[j_cur] == 'T':
                 self.start[j_cur] = - 1. / (abg.alpha() + abg.gamma())
@@ -534,9 +539,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     # flux_meas = np.empty(len_sim_list, dtype=float)
     # flux_act = np.empty(len_sim_list, dtype=float)
 
-    time_list = (des_th.N + 1) * [[]]
-    flux_meas = (des_th.N + 1) * [[]]
-    flux_act = (des_th.N + 1) * [[]]
+    time_list = [[0.0] for _ in range(des_th.N + 1)]
+    flux_meas = [[0.0] for _ in range(des_th.N + 1)]
+    flux_act = [[0.0] for _ in range(des_th.N + 1)]
 
     # Информация о дизайне в текущий для симуляции момент времени
     des_act = copy.deepcopy(des_th)
@@ -544,11 +549,13 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     des_act.d = (des_th.N + 1) * [0.0]
 
     # term_cond_case = np.zeros(des_th.N + 1, dtype=float)
-    term_cond_case = (des_th.N + 1) * [0.0]
-
-    time_list[1].append(0.0)
+    term_cond_case = (des_th.N + 1) * [0]
 
     for j in range(1, des_th.N + 1):
+        # На новом слое получем теоретическое theta (можно просто оценить, но мы получим точно)
+        nonloc_coef_th = MonochromStrategyInfo(des_act, set_up_pars).nonloc_coef[j]
+        theta_th = nonloc_coef_th[-1]
+
         # print('j =', j)
         nonloc_alg = DataNonloc(j, des_th, set_up_pars)
         term_cond = False
@@ -562,8 +569,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
 
         # шаг *измерения и анализа*
         # lsc = 0  # layer_step_counter
-        flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
-        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+        time_list[j][0] = time_list[j - 1][-1]
+        flux_act[j][0] = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
+        flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j])
         nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
         # напыление слоя
@@ -586,9 +594,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                 if des_act.d[j] < 0.7 * des_th.d[j]:
                     continue
                 else:
-                    expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j])
-
-            if expected_interval:
+                    expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j], theta_th=theta_th)
+            elif expected_interval:
                 if term_algs[j] == 'Elimination':
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
                 elif term_algs[j] == 'Quasiswing':
@@ -616,6 +623,11 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, set_up_pars.rates_sigmas[j])
                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
 
+                    if j < des_th.N:
+                        time_list[j].append(time_list[j][-1] + delta_t)
+                        flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
+                        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+
                 elif nonloc_alg.q_pass_term_flux_lvl(dt, term_flux_lvl, set_up_pars.q_TR[j]):
                     # Termination case 2
                     # На очередном шаге было обнаружено, что произошло перепыление
@@ -629,12 +641,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     term_cond_case[j] = 3
 
                 if term_cond:
-                    if j < des_th.N:
-                        if term_cond_case[j] == 1:
-                            time_list[j + 1].append(time_list[j][-1] + delta_t)
-                        else:
-                            time_list[j + 1].append(time_list[j][-1])
                     break
+            else:
+                print('Impossible! (expected_interval block)')
         else:
             print('Overflow simulation error on seed =', rnd_seed)
 
