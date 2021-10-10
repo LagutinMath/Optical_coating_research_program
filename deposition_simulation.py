@@ -76,13 +76,13 @@ def norm_3sigma_rnd(rng, *, mean=0.0, sigma=0.0):
     """
     Функция возвращает нормально распределенную случайную величину,
     с ненулевым мат.ожиданием, которая модифицирована так, чтобы
-    значение не выходило за границы интервала [-3*sigma, 3*sigma]
+    значение не выходило за границы интервала [mean-3*sigma, mean+3*sigma]
     """
     rnd_val = rng.normal(mean, sigma)
-    if rnd_val > 3.0 * sigma:
-        rnd_val = 3.0 * sigma
-    elif rnd_val < -3.0 * sigma:
-        rnd_val = -3.0 * sigma
+    if rnd_val > mean + 3.0 * sigma:
+        rnd_val = mean + 3.0 * sigma
+    elif rnd_val < mean - 3.0 * sigma:
+        rnd_val = mean - 3.0 * sigma
     return rnd_val
 
 
@@ -623,6 +623,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
 
                     delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
                         + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+
+
 
 
                     # шаг *изменения состояния природы*
