@@ -18,7 +18,7 @@ class SetUpParameters:
     """
 
     def __init__(self, waves, q_TR, tau, rates, mono_width, meas_sigmas, meas_syst,
-                 rates_sigmas, rates_syst, delay_time):
+                 rates_sigmas, rates_syst, delay_time, delay_time_sigma, r_index_syst, r_index_sigmas):
         self.waves = waves
         self.q_TR = q_TR
         self.tau = tau
@@ -29,6 +29,9 @@ class SetUpParameters:
         self.rates_sigmas = rates_sigmas
         self.rates_syst = rates_syst
         self.delay_time = delay_time
+        self.delay_time_sigma = delay_time_sigma
+        self.r_index_syst = r_index_syst
+        self.r_index_sigmas = r_index_sigmas
         # N --- кол-во слоёв
         # в массивах индекс соответствует номеру слоя
         # индекс 0 незадействован для rates и пр.
@@ -69,13 +72,13 @@ def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
     return des.N + 1, 10 * max_step
 
 
-def norm_3sigma_rnd(rng, sigma):
+def norm_3sigma_rnd(rng, *, mean=0.0, sigma=0.0):
     """
     Функция возвращает нормально распределенную случайную величину,
-    с нулевым мат.ожиданием, которая модифицирована так, чтобы
+    с ненулевым мат.ожиданием, которая модифицирована так, чтобы
     значение не выходило за границы интервала [-3*sigma, 3*sigma]
     """
-    rnd_val = rng.normal(0.0, sigma)
+    rnd_val = rng.normal(mean, sigma)
     if rnd_val > 3.0 * sigma:
         rnd_val = 3.0 * sigma
     elif rnd_val < -3.0 * sigma:
@@ -551,6 +554,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
     term_cond_case = (des_th.N + 1) * [0]
 
     for j in range(1, des_th.N + 1):
+        des_act.n_fix[0][j] = des_act.n(j, set_up_pars.waves[j])\
+                * (1 + norm_3sigma_rnd(rng, mean=set_up_pars.r_index_syst[j], sigma=set_up_pars.r_index_sigmas[j]))
         # На новом слое получем теоретическое theta (можно просто оценить, но мы получим точно)
         nonloc_coef_th = MonochromStrategyInfo(des_act, set_up_pars).nonloc_coef[j]
         theta_th = nonloc_coef_th[-1]
@@ -570,7 +575,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
         # lsc = 0  # layer_step_counter
         time_list[j][0] = time_list[j - 1][-1]
         flux_act[j][0] = calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j])
-        flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j])
+        flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
         nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
         # напыление слоя
@@ -578,13 +583,13 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
         for lsc in range(1, max_steps):
             # шаг *изменения состояния природы*
             dt += delta_t
-            cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, set_up_pars.rates_sigmas[j])
+            cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
             des_act.increase_layer_thickness(j, delta_t * cur_rate)
 
             # шаг *измерения и анализа*
             time_list[j].append(time_list[j][-1] + delta_t)
             flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
-            flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+            flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
             nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
             if not nonloc_alg.exist_coef:
@@ -616,16 +621,18 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                     term_cond = True
                     term_cond_case[j] = 1
 
-                    delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j])
+                    delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
+                        + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+
 
                     # шаг *изменения состояния природы*
-                    cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, set_up_pars.rates_sigmas[j])
+                    cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
 
                     if j < des_th.N:
                         time_list[j].append(time_list[j][-1] + delta_t)
                         flux_act[j].append(calc_flux(des_act, set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j]))
-                        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, set_up_pars.meas_sigmas[j]))
+                        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
 
                 elif nonloc_alg.q_pass_term_flux_lvl(dt, term_flux_lvl, set_up_pars.q_TR[j]):
                     # Termination case 2
