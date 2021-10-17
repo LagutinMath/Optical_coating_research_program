@@ -397,7 +397,7 @@ def find_file_name(obj_name: str, ext='.json'):
 
 
 class SimInfo:
-    def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case):
+    def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case, wavelength, n_act):
         self.N_layers = len(des_th_d) - 1
         self.d_th = des_th_d
         self.d_act = des_act_d
@@ -406,16 +406,19 @@ class SimInfo:
         self.term_cond_case = term_cond_case
         # self.errors_d = des_act_d - des_th_d
         self.errors_d = [d_act - d_th for (d_act, d_th) in list(zip(*[des_act_d, des_th_d]))]
+        self.wavelength = wavelength
+        self.n_act = n_act
 
     def make_dict(self):
-        len_list = len(self.time_list)
-        time_list = len_list * [[]]
-        flux_meas = len_list * [[]]
-        for j in range(1, len_list):
-            time_list[j] = self.time_list[j].tolist()
-            flux_meas[j] = self.flux_meas[j].tolist()
-        sim_dict = {'time_list': time_list, 'flux_meas': flux_meas,
-                    'term_cond_case': self.term_cond_case, 'errors_d': self.errors_d}
+        # len_list = len(self.time_list)
+        # time_list = len_list * [[]]
+        # flux_meas = len_list * [[]]
+        # for j in range(1, len_list):
+        #     time_list[j] = self.time_list[j].tolist()
+        #     flux_meas[j] = self.flux_meas[j].tolist()
+        sim_dict = {'time_list': self.time_list, 'flux_meas': self.flux_meas,
+                    'wavelength': self.wavelength,
+                    'actual thicnesses': self.d_act, 'actual n': self.n_act}
         return sim_dict
 
     def save(self):
@@ -655,7 +658,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
         else:
             print('Overflow simulation error on seed =', rnd_seed)
 
-    return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case)
+    wavelength = [set_up_pars.waves[j].wavelength for j in range(1, des_th.N + 1)]
+    n_act = [des_act.n_fix[0][j] for j in range(1, des_th.N + 1)]
+    return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength, n_act)
 
 
 class StatInfo:
