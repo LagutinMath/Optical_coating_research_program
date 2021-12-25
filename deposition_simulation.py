@@ -627,6 +627,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
 
 
 
+
                     # шаг *изменения состояния природы*
                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
@@ -654,6 +655,14 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
                 print('Impossible! (expected_interval block)')
         else:
             print('Overflow simulation error on seed =', rnd_seed)
+
+    #optical thicknessess
+    # h_th = 0.0
+    # h_act = 0.0
+    # for j in range(1, des_th.N + 1):
+    #     h_th += des_th.n(j, set_up_pars.waves[j])*des_th.d[j]
+    #     h_act += des_act.n_fix[0][j]*des_act.d[j]
+    # print("h_th=", h_th, "h_act=", h_act, "delta_h=", h_act-h_th)
 
     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case)
 
