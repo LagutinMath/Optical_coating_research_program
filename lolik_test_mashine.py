@@ -1,7 +1,10 @@
-from deposition_simulation import *
+# from deposition_simulation import *
+#
+# rng = np.random.default_rng(152)
+#
+# x = norm_3sigma_rnd(rng, sigma=0.0)
+#
+# print(x)
 
-rng = np.random.default_rng(152)
-
-x = norm_3sigma_rnd(rng, sigma=0.0)
-
+x = 2+3
 print(x)
