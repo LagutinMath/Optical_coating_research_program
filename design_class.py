@@ -81,6 +81,14 @@ class Design:
                     self.n_fix[0][layer_num] = float(f_interp(wv.wavelength))
         return self.n_fix[0][layer_num]
 
+    def xi(self, layer_num, wv):
+        layer_material = self.materials["mat_inf"][self.materials["layers"][layer_num]]
+        if "xi" in layer_material["Table"]:
+            f_interp = interp1d(layer_material["Table"]["wavelength"], layer_material["Table"]["xi"])
+            return float(f_interp(wv.wavelength))
+        else:
+            return 0.0
+
     def thickness_plot(self):
         # Сделать картинку во весь экран для 27 дюймового монитора
         # diag = math.sqrt(16**2 + 9**2)
@@ -135,7 +143,7 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, *, q_subs=True, q_percent=False, n_a=1, q_TR='both'):
+def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='both'):
     M = [[1.0, 0.0], [0.0, 1.0]]
     for j in range(des.N + 1):
         if wv.angle == 0:
@@ -172,8 +180,13 @@ def calc_flux(des, wv, *, q_subs=True, q_percent=False, n_a=1, q_TR='both'):
     if q_subs:
         T_2 = 4.0 * q_a * q_s / (q_a + q_s) ** 2
         R_2 = ((q_a - q_s) / (q_a + q_s)) ** 2
-        T = T_1 * T_2 / (1.0 - R_1 * R_2)
-        R = (R_1 + (R_2 * T_1 * T_1) / (1.0 - R_1 * R_2))
+        if backside:
+            T_1, T_2 = T_2, T_1
+            R_1, R_2 = R_2, R_1
+        # формула для коэффициента поглощения верна для нормального падения
+        sgm = np.exp(-4 * np.pi * des.xi(0, wv) * des.d[0] / wv.wavelength)
+        T = sgm * T_1 * T_2 / (1.0 - R_1 * R_2 * sgm**2)
+        R = (R_1 + (sgm**2 * R_2 * T_1 * T_1) / (1.0 - R_1 * R_2 * sgm**2))
     else:
         T, R = T_1, R_1
 
