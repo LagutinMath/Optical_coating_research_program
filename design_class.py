@@ -7,6 +7,15 @@ import os.path
 import matplotlib.pyplot as plt
 
 
+def Sellmeier_n(coef_A, wvlen):
+    # wvlen in nm
+    wv2 = wvlen ** 2
+    pwr2n = (coef_A[0] + wv2 * (coef_A[1] / (wv2 - coef_A[2]) +
+                                coef_A[3] / (wv2 - coef_A[4]) +
+                                coef_A[5] / (wv2 - coef_A[6])))
+    return np.sqrt(pwr2n)
+
+
 class Design:
     def __init__(self, des_name=None, thicknesses=None, n_const=None, des_json=None):
         self.q_n_const = False
@@ -15,6 +24,7 @@ class Design:
 
         if des_json is not None:
             self.materials = des_json
+            self.name = des_json['name']
         elif des_name is not None:
             fname = 'Designs/' + des_name + '.json'
             if os.path.isfile(fname):
@@ -45,10 +55,20 @@ class Design:
             self.n_fix[0] = n_const
 
     def create_simple_json(self):
+        # подразумевается, что есть только имя и вектора d и n
         fname = 'Designs/' + self.name + '.json'
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
                 inf = json.dumps({'name': self.name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=4)
+                print(inf, file=file)
+
+    def create_json(self):
+        print(1)
+        fname = 'Designs/' + self.name + '.json'
+        print(fname)
+        if not os.path.isfile(fname):
+            with open(fname, 'w') as file:
+                inf = json.dumps(self.materials, indent=4)
                 print(inf, file=file)
 
     def increase_layer_thickness(self, j, delta_d):
@@ -61,7 +81,9 @@ class Design:
             # В случае истинности self.q_n_const ничего делать не надо. Значения инициализированы конструктором
             if not self.q_n_const:
                 layer_material = self.materials["mat_inf"][self.materials["layers"][layer_num]]
-                if "Cauchy" in layer_material:
+                if "Sellmeier" in layer_material:
+                    self.n_fix[0][layer_num] = Sellmeier_n(layer_material["Sellmeier"], wv.wavelength)
+                elif "Cauchy" in layer_material:
                     self.n_fix[0][layer_num] = layer_material["Cauchy"][0] + layer_material["Cauchy"][
                         1] / wv.wavelength ** 2 + layer_material["Cauchy"][2] / wv.wavelength ** 4
                 else:
@@ -84,11 +106,11 @@ class Design:
         # plt.title('Design physical thicknesses')
         plt.show()
 
-    def spectral_plot(self, q_TR='T'):
+    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760]):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
         ax = fig.add_subplot()
         N_pts = 1000
-        x_range = np.linspace(380, 760, N_pts)
+        x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
         y_range = N_pts * [0.0]
         for i in range(N_pts):
             y_range[i] = calc_flux(self, Wave(x_range[i]), q_percent=True, q_TR=q_TR)
