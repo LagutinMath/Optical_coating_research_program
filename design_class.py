@@ -2,6 +2,7 @@ from scipy.interpolate import interp1d
 import math
 import numpy as np
 import json
+import os.path
 # from numba import njit
 import matplotlib.pyplot as plt
 
@@ -10,15 +11,25 @@ class Design:
     def __init__(self, des_name=None, thicknesses=None, n_const=None, des_json=None):
         self.q_n_const = False
         self.name = ''
+        self.n_const = []
 
         if des_json is not None:
             self.materials = des_json
         elif des_name is not None:
-            self.name = des_name
-            with open('Designs/' + des_name + '.json', 'r') as file:
-                self.materials = json.load(file)
-        elif n_const is not None:
+            fname = 'Designs/' + des_name + '.json'
+            if os.path.isfile(fname):
+                with open(fname, 'r') as file:
+                    self.materials = json.load(file)
+                    self.name = self.materials['name']
+                    if 'n_const' in self.materials:
+                        self.q_n_const = True
+                        n_const = self.materials['n_const']
+            else:
+                self.name = des_name
+
+        if n_const is not None:
             self.q_n_const = True
+            self.n_const = n_const
 
         if thicknesses is None:
             self.d = self.materials["thicknesses"]
@@ -32,6 +43,13 @@ class Design:
         self.n_fix = np.zeros((2, self.N + 1), dtype=float)
         if self.q_n_const:
             self.n_fix[0] = n_const
+
+    def create_simple_json(self):
+        fname = 'Designs/' + self.name + '.json'
+        if not os.path.isfile(fname):
+            with open(fname, 'w') as file:
+                inf = json.dumps({'name': self.name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=4)
+                print(inf, file=file)
 
     def increase_layer_thickness(self, j, delta_d):
         self.d[j] += delta_d
