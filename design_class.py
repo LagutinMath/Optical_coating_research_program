@@ -6,16 +6,6 @@ import os.path
 # from numba import njit
 import matplotlib.pyplot as plt
 
-
-def Sellmeier_n(coef_A, wvlen):
-    # wvlen in nm
-    wv2 = wvlen ** 2
-    pwr2n = (coef_A[0] + wv2 * (coef_A[1] / (wv2 - coef_A[2]) +
-                                coef_A[3] / (wv2 - coef_A[4]) +
-                                coef_A[5] / (wv2 - coef_A[6])))
-    return np.sqrt(pwr2n)
-
-
 class Design:
     def __init__(self, des_name=None, thicknesses=None, n_const=None, des_json=None):
         self.q_n_const = False
@@ -121,6 +111,15 @@ class Design:
         plt.show()
 
 
+def Sellmeier_n(coef_A, wvlen):
+    # wvlen in nm
+    wv2 = wvlen ** 2
+    pwr2n = (coef_A[0] + wv2 * (coef_A[1] / (wv2 - coef_A[2]) +
+                                coef_A[3] / (wv2 - coef_A[4]) +
+                                coef_A[5] / (wv2 - coef_A[6])))
+    return np.sqrt(pwr2n)
+
+
 class Wave:
     def __init__(self, wavelength, polarisation='S', angle=0):
         self.wavelength = wavelength
@@ -136,7 +135,7 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, q_subs=True, q_percent=False, n_a=1, q_TR='both'):
+def calc_flux(des, wv, *, q_subs=True, q_percent=False, n_a=1, q_TR='both'):
     M = [[1.0, 0.0], [0.0, 1.0]]
     for j in range(des.N + 1):
         if wv.angle == 0:
