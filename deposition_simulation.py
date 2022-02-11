@@ -5,6 +5,7 @@ from design_class import *
 import copy
 from os import listdir
 from matplotlib.animation import FuncAnimation
+from datetime import datetime
 
 
 class SetUpParameters:
@@ -533,7 +534,7 @@ class MonochromStrategyInfo:
             self.prev_extr[j_cur] = abg.prev_extr(phi, set_up_pars.q_TR[j_cur])
 
 
-def simulation(des_th, term_algs, set_up_pars, rnd_seed=10000000):
+def simulation(des_th, term_algs, set_up_pars, rnd_seed=datetime.now().time().microsecond):
     str_info = MonochromStrategyInfo(des_th, set_up_pars)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
