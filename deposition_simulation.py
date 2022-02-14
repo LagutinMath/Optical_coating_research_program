@@ -604,7 +604,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                 if des_act.d[j] < 0.7 * des_th.d[j]:
                     continue
                 else:
-                    expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j], theta_th=theta_th)
+                    # expected_interval = nonloc_alg.q_expected_interval(dt, des_th.d[j], theta_th=theta_th)
+                    # Ожидаемый интервал должен удостоверяться для след. шага dt + delta_t
+                    expected_interval = nonloc_alg.q_expected_interval(dt + delta_t, des_th.d[j], theta_th=theta_th)
             elif expected_interval:
                 if term_algs[j] == 'Elimination':
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
@@ -629,9 +631,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
 
                     delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
                         + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
-
-
-
 
                     # шаг *изменения состояния природы*
                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
