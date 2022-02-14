@@ -534,7 +534,9 @@ class MonochromStrategyInfo:
             self.prev_extr[j_cur] = abg.prev_extr(phi, set_up_pars.q_TR[j_cur])
 
 
-def simulation(des_th, term_algs, set_up_pars, rnd_seed=datetime.now().time().microsecond):
+def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
+    if rnd_seed is None:
+        rnd_seed = datetime.now().time().microsecond
     str_info = MonochromStrategyInfo(des_th, set_up_pars)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам

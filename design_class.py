@@ -3,6 +3,7 @@ import math
 import numpy as np
 import json
 import os.path
+import copy
 # from numba import njit
 import matplotlib.pyplot as plt
 
@@ -43,6 +44,13 @@ class Design:
         self.n_fix = np.zeros((2, self.N + 1), dtype=float)
         if self.q_n_const:
             self.n_fix[0] = n_const
+
+    def design_on_witness(self, j):
+        # предполагается, что наблюдаются два соседних слоя H и L начиная со слоя j
+        des = copy.deepcopy(self)
+        des.N = 2
+        des.d = [self.d[0], self.d[j], self.d[j + 1]]
+        return des
 
     def create_simple_json(self):
         # подразумевается, что есть только имя и вектора d и n
