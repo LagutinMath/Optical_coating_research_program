@@ -107,8 +107,10 @@ class Design:
         ax = fig.add_subplot()
         ax.bar(range(1, self.N + 1, 2), self.d[1:self.N + 1:2], color='b')
         ax.bar(range(2, self.N + 1, 2), self.d[2:self.N + 1:2], color='r')
-        plt.xlabel('Layer number')
-        plt.ylabel('Physical thickness, nm')
+        plt.xlabel('Layer number', fontsize=24)
+        plt.ylabel('Physical thickness, nm', fontsize=24)
+        plt.xticks(fontsize=24)
+        plt.yticks(fontsize=24)
         # plt.title('Design physical thicknesses')
         plt.show()
 
@@ -121,8 +123,10 @@ class Design:
         for i in range(N_pts):
             y_range[i] = calc_flux(self, Wave(x_range[i]), q_percent=True, q_TR=q_TR)
         ax.plot(x_range, y_range)
-        plt.xlabel('Wavelength, nm')
-        plt.ylabel('T, %')
+        plt.xlabel('Wavelength, nm', fontsize=24)
+        plt.ylabel('T, %', fontsize=24)
+        plt.xticks(fontsize=24)
+        plt.yticks(fontsize=24)
         # plt.title('Design physical thicknesses')
         plt.show()
 
