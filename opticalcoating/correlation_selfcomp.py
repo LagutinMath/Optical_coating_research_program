@@ -1,9 +1,5 @@
-import math
-import numpy as np
-import scipy. io
-from design_class import *
-from deposition_simulation import *
-from itertools import zip_longest
+from opticalcoating.deposition_simulation import *
+
 
 def correlation(A):
     M = len(A[:, 1])
