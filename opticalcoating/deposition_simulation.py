@@ -20,7 +20,7 @@ class SetUpParameters:
 
     def __init__(self, *, N, waves=510, q_TR='R', tau=2., rates=0.5, mono_width=0., meas_sigmas=None, meas_syst=0.,
                  rates_sigmas=None, rates_syst=0., delay_time=0., delay_time_sigma=0., r_index_syst=None,
-                 r_index_sigmas=None):
+                 r_index_sigmas=None, backside=False):
         self.N = N
 
         if isinstance(waves, (int, float)):
@@ -34,6 +34,7 @@ class SetUpParameters:
             self.q_TR = q_TR
 
         self.tau = tau
+        self.backside = backside
 
         self.rates = autofill(rates, N=self.N)
         self.mono_width = mono_width
@@ -65,10 +66,9 @@ def autofill(x, *, N):
         else:
             return x
 
+
 def num_step_estimation(des: Design, set_up_pars: SetUpParameters):
-    """
-    Вычисление оценки кол-ва шагов в предстоящей симуляции
-    """
+    """Вычисление оценки кол-ва шагов в предстоящей симуляции"""
     r = set_up_pars.rates
     tau = set_up_pars.tau
     total_time = 0.0
@@ -78,12 +78,10 @@ def num_step_estimation(des: Design, set_up_pars: SetUpParameters):
 
 
 def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
-    """
-    Возвращает лист нужный для генерации пустых списков для предстоящей симуляции
+    """Возвращает лист нужный для генерации пустых списков для предстоящей симуляции
     первое число кол-во слоёв (кол-во строк)
     второе число кол-во шагов на одном слое (кол-во столбцов)
-    кол-во шагов возвращает с 10-ти кратным запасом
-    """
+    кол-во шагов возвращает с 10-ти кратным запасом"""
     r = set_up_pars.rates
     tau = set_up_pars.tau
     max_step = 0
@@ -94,11 +92,9 @@ def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
 
 
 def norm_3sigma_rnd(rng, *, mean=0.0, sigma=0.0):
-    """
-    Функция возвращает нормально распределенную случайную величину,
+    """Функция возвращает нормально распределенную случайную величину,
     с ненулевым мат.ожиданием, которая модифицирована так, чтобы
-    значение не выходило за границы интервала [mean-3*sigma, mean+3*sigma]
-    """
+    значение не выходило за границы интервала [mean-3*sigma, mean+3*sigma]"""
     rnd_val = rng.normal(mean, sigma)
     if rnd_val > mean + 3.0 * sigma:
         rnd_val = mean + 3.0 * sigma
@@ -120,8 +116,7 @@ def my_atan(x: float, y: float):
 
 
 def num_cutoffs(theta: float, phi: float):
-    """Количество точек pi * n принадлежащих (theta, theta + 2 * phi), где n --- целое
-    """
+    """Количество точек pi * n принадлежащих (theta, theta + 2 * phi), где n --- целое"""
     prec = 0.0001
     b = theta / np.pi
     e = (theta + 2 * phi) / np.pi
@@ -144,11 +139,9 @@ def num_cutoffs(theta: float, phi: float):
 
 class NonlocCoef:
     def __init__(self, abg=None, Dthg=None):
-        """
-        Нелокальные коэф. можно определить
+        """Нелокальные коэф. можно определить
         либо как abg = (alpha, beta, gamma),
-        либо как Dthg = (D, theta, gamma)
-        """
+        либо как Dthg = (D, theta, gamma)"""
         if abg is None:
             self.abg = [1.0, 1.0, 1.0]
         else:
@@ -238,15 +231,39 @@ class NonlocCoef:
                 return 'max'
 
 
-def theor_nonloccoef(A_re: float, A_im: float, n_j: float, n_s: float):
+def R_full(R_1, R_2, d_s, xi, wvlen):
+    """Полное отражение нормально падающего света от системы c двумя поверхностями,
+    между которыми не происходит интерференции
+    :param R_1: отражение от передней поверхности
+    :param R_2: отражение от задней поверхности
+    :param d_s: растояние между поверхностями
+    :param xi: поглощение в среде между поверхностями"""
+    sgm = math.exp(- 4 * pi * d_s * xi / wvlen)
+    return R_1 + (sgm**2 * R_2 * (1 - R_1)**2)/(1 - sgm**2 * R_1 * R_2)
+
+
+def T_full(T_1, T_2, d_s, xi, wvlen):
+    """Полное пропускание нормально падающего света системы c двумя поверхностями,
+    между которыми не происходит интерференции
+    :param T_1: пропускание передней поверхности
+    :param T_2: пропускание задней поверхности
+    :param d_s: растояние между поверхностями
+    :param xi: поглощение в среде между поверхностями"""
+    sgm = math.exp(- 4 * pi * d_s * xi / wvlen)
+    return sgm * T_1 * T_2 / (1 - sgm**2 * (1 - T_1) * (1 - T_2))
+
+
+def theor_nonloccoef(A_re: float, A_im: float, n_j: float, n_s: float, only_front_side=False):
     """Вычисляет нелок.коэф-ты по адмиттансу (с учетом отражения от задней стороны подложки)
     :param A_re: Действительная часть адмиттанса
     :param A_im: Мнимая часть адмиттанса
     :param n_j: показатель преломления текущего слоя
     :param n_s: показатель преломления
-    :return: Нелокальные коэффициенты
-    """
-    k_R = ((n_s - 1.) / (n_s + 1)) ** 2
+    :return: Нелокальные коэффициенты"""
+    if only_front_side:
+        k_R = 0.
+    else:
+        k_R = ((n_s - 1.) / (n_s + 1)) ** 2
     rho = math.sqrt(A_re ** 2 + A_im ** 2)
 
     alpha = (rho ** 2 - n_j ** 2) * (1. - n_j ** 2) / (8. * A_re * n_j ** 2)
@@ -320,8 +337,7 @@ class DataNonloc:
 
     def flux(self, thickness, q_TR):
         """Возвращает значение flux, которое соответствует напыленной толщине thickness
-        При подстановки d_j^{theor} это есть уровень остановки независимого метода контроля
-        """
+        При подстановки d_j^{theor} это есть уровень остановки независимого метода контроля"""
         d_phi = self.n * thickness * 2 * np.pi / self.wavelength
         if q_TR == 'R':
             ans = 1.0 + 1.0 / (self.coef.D() * math.cos(2 * d_phi + self.coef.theta()) + self.coef.gamma())
@@ -336,8 +352,7 @@ class DataNonloc:
         где должен прекратиться процесс напыления
         :param dt: время прошедшее с начала напыления слоя
         :param d_th: толщина теоретического дизайна
-        :param theta_th: оценка теоретического theta на слое
-        """
+        :param theta_th: оценка теоретического theta на слое"""
         phi_act = self.n * self.r * dt * 2 * np.pi / self.wavelength
         phi_th = self.n * d_th * 2 * np.pi / self.wavelength
 
@@ -386,8 +401,6 @@ class DataNonloc:
         phi_n2 = phi_n + pi * n_n
         phi_lst = [phi_p1, phi_p2, phi_n1, phi_n2]
         dist_phi = [math.fabs(each_phi - phi_th) for each_phi in phi_lst]
-        print(phi_lst)
-        print(dist_phi)
 
         indx, elem = min(enumerate(dist_phi), key=lambda x: x[1])
         # Ближайщее решение
@@ -426,8 +439,7 @@ class DataNonloc:
 def find_file_name(obj_name: str, ext='.json'):
     """Ищет и возвращает свободное имя в папке *имя объекта*s
     Пример: obj_name = 'Simulation', первое возвращенное имя будет:
-    'Simulations/Simulation001.json'
-    """
+    'Simulations/Simulation001.json'"""
     dir_file_names = listdir(obj_name + 's/')
     indx = 1
     file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + ext
@@ -528,8 +540,7 @@ class MonochromStrategyInfo:
         в начале напыления слоя, в конце напыления слоя и экстремумы,
         которые могут достигаться при достаточной толщине слоя
         для заданной стратегии монохроматического мониторинга
-        в случае теоретического дизайна с однородными слоями
-        """
+        в случае теоретического дизайна с однородными слоями"""
         self.start = (des_th.N + 1) * [0.0]
         self.max = (des_th.N + 1) * [0.0]
         self.min = (des_th.N + 1) * [0.0]
@@ -543,6 +554,9 @@ class MonochromStrategyInfo:
         for j_cur in range(1, des_th.N + 1):
             wavelength = set_up_pars.waves[j_cur].wavelength
             n_s = des_th.n(0, set_up_pars.waves[j_cur])
+            if set_up_pars.backside:
+                R_1 = ((n_s - 1.) / (n_s + 1)) ** 2
+                T_1 = 1. - R_1
             A_re = n_s
             A_im = 0.
             for j in des_th.witness_layers(j_cur):
@@ -551,8 +565,13 @@ class MonochromStrategyInfo:
                 A_re, A_im = increase_admittance(A_re, A_im, wavelength, d, n)
 
             n_j_cur = des_th.n(j_cur, set_up_pars.waves[j_cur])
-
-            abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s)
+            if set_up_pars.backside:
+                abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s, only_front_side=True)
+                d_s = des_th.d[0]
+                xi = des_th.xi(j_cur, wavelength)
+                wv = wavelength
+            else:
+                abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s)
             abg.calc_Dthg()
             self.nonloc_coef[j_cur] = [abg.alpha(), abg.beta(), abg.gamma(), abg.D(), abg.theta()]
 
@@ -560,29 +579,45 @@ class MonochromStrategyInfo:
                 self.start[j_cur] = - 1. / (abg.alpha() + abg.gamma())
                 self.max[j_cur] = - 1. / (abg.gamma() + abg.D())
                 self.min[j_cur] = - 1. / (abg.gamma() - abg.D())
-                self.ampl[j_cur] = self.max[j_cur] - self.min[j_cur]
+                if set_up_pars.backside:
+                    self.start[j_cur] = T_full(T_1, self.start[j_cur], d_s, xi, wv)
+                    self.max[j_cur] = T_full(T_1, self.max[j_cur], d_s, xi, wv)
+                    self.min[j_cur] = T_full(T_1, self.min[j_cur], d_s, xi, wv)
             else:
                 self.start[j_cur] = 1. + 1. / (abg.alpha() + abg.gamma())
                 self.max[j_cur] = 1. + 1. / (abg.gamma() - abg.D())
                 self.min[j_cur] = 1. + 1. / (abg.gamma() + abg.D())
-                self.ampl[j_cur] = self.max[j_cur] - self.min[j_cur]
+                if set_up_pars.backside:
+                    self.start[j_cur] = R_full(R_1, self.start[j_cur], d_s, xi, wv)
+                    self.max[j_cur] = R_full(R_1, self.max[j_cur], d_s, xi, wv)
+                    self.min[j_cur] = R_full(R_1, self.min[j_cur], d_s, xi, wv)
+
+            self.ampl[j_cur] = self.max[j_cur] - self.min[j_cur]
 
             d_j_cur = des_th.d[j_cur]
             phi = (2. * np.pi / wavelength) * d_j_cur * n_j_cur
 
             if set_up_pars.q_TR[j_cur] == 'T':
                 self.term[j_cur] = - 1. / (abg.alpha() * math.cos(2. * phi) + abg.beta() * math.sin(2. * phi) + abg.gamma())
+                if set_up_pars.backside:
+                    self.term[j_cur] = T_full(T_1, self.term[j_cur], d_s, xi, wv)
             else:
                 self.term[j_cur] = 1. + 1. / (abg.alpha() * math.cos(2. * phi) + abg.beta() * math.sin(2. * phi) + abg.gamma())
+                if set_up_pars.backside:
+                    self.term[j_cur] = R_full(R_1, self.term[j_cur], d_s, xi, wv)
 
             self.prev_extr[j_cur] = abg.prev_extr(phi, set_up_pars.q_TR[j_cur])
+            if set_up_pars.backside:
+                if set_up_pars.q_TR[j_cur] == 'T':
+                    self.prev_extr[j_cur] = T_full(T_1, self.prev_extr[j_cur], d_s, xi, wv)
+                else:
+                    self.prev_extr[j_cur] = R_full(R_1, self.prev_extr[j_cur], d_s, xi, wv)
             self.q_prev_extr[j_cur] = abg.q_prev_extr(phi, set_up_pars.q_TR[j_cur])
 
 
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
     if rnd_seed is None:
         rnd_seed = datetime.now().time().microsecond
-    # print(f'seed = {rnd_seed}')
     str_info = MonochromStrategyInfo(des_th, set_up_pars)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
@@ -625,7 +660,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
         # шаг *измерения и анализа*
         # lsc = 0  # layer_step_counter
         time_list[j][0] = time_list[j - 1][-1]
-        flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j)
+        flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+                                           backside=set_up_pars.backside)
         flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
         nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -639,7 +675,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
 
             # шаг *измерения и анализа*
             time_list[j].append(time_list[j][-1] + delta_t)
-            flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j))
+            flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+                                                 backside=set_up_pars.backside))
             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
             nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -656,7 +693,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                     else:
                         turn = nonloc_alg.coef.flux_min(q_TR=set_up_pars.q_TR[j])
                     ampl = nonloc_alg.coef.ampl()
-                    print(f'extr_th = {str_info.prev_extr[j]}, extr_act = {turn},\nampl_th = {str_info.ampl[j]}, ampl_act = {ampl}')
                     term_flux_lvl = turn - (str_info.prev_extr[j] - str_info.term[j]) * (ampl / str_info.ampl[j])
                 # elif term_algs[j] == 'Pseudoswing':
                 #     # Не готово
@@ -667,7 +703,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                     raise NameError(f'Uncorrect termination algoritm for layer {j}')
 
                 t_term = nonloc_alg.calc_t(d_th=des_th.d[j], lvl=term_flux_lvl, q_TR=set_up_pars.q_TR[j])
-                print(f'j = {j}, lsc = {lsc}, delta_t = {t_term - dt}')
 
                 if 0 <= (t_term - dt) <= delta_t:
                     # Termination case 1
@@ -685,7 +720,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
 
                     if j < des_th.N:
                         time_list[j].append(time_list[j][-1] + delta_t)
-                        flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j))
+                        flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+                                                             backside=set_up_pars.backside))
                         flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
 
                 elif dt > t_term:
