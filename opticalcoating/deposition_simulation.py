@@ -2,8 +2,8 @@ import os.path
 import numpy as np
 import math
 from opticalcoating.design_class import *
+from opticalcoating.simulation_info import SimInfo
 import copy
-from os import listdir
 from matplotlib.animation import FuncAnimation
 from datetime import datetime
 from numpy import pi
@@ -15,8 +15,7 @@ class SetUpParameters:
         - длина волны мониторинга,
         - наблюдается коэф.отражения или пропускания
         - промежуток времени через который проводятся измерения
-    2. Информацию о несовершенстве установки
-    """
+    2. Информацию о несовершенстве установки"""
 
     def __init__(self, *, N, waves=510, q_TR='R', tau=2., rates=0.5, mono_width=0., meas_sigmas=None, meas_syst=0.,
                  rates_sigmas=None, rates_syst=0., delay_time=0., delay_time_sigma=0., r_index_syst=None,
@@ -436,86 +435,6 @@ class DataNonloc:
     #         return 0.0
 
 
-def find_file_name(obj_name: str, ext='.json'):
-    """Ищет и возвращает свободное имя в папке *имя объекта*s
-    Пример: obj_name = 'Simulation', первое возвращенное имя будет:
-    'Simulations/Simulation001.json'"""
-    dir_file_names = listdir(obj_name + 's/')
-    indx = 1
-    file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + ext
-
-    while indx < 1000:
-        file_name = obj_name + 's/' + obj_name + str(indx).zfill(3) + ext
-        is_name_in_dir = False
-        for name in dir_file_names:
-            is_name_in_dir = ((obj_name + 's/' + name) == file_name)
-            if is_name_in_dir:
-                break
-        if is_name_in_dir:
-            indx += 1
-            continue
-        else:
-            break
-
-    return file_name
-
-
-class SimInfo:
-    def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case, wavelength):
-        self.N_layers = len(des_th_d) - 1
-        self.d_th = des_th_d
-        self.d_act = des_act_d
-        self.time_list = time_list_res
-        self.flux_meas = flux_meas_res
-        self.term_cond_case = term_cond_case
-        self.errors_d = [d_act - d_th for (d_act, d_th) in list(zip(*[des_act_d, des_th_d]))]
-        self.wavelength = wavelength
-
-
-    def make_dict(self):
-        sim_dict = {'time_list': self.time_list, 'flux_meas': self.flux_meas,
-                    'wavelength': self.wavelength,
-                    'actual thicnesses': self.d_act, 'actual n': self.n_act}
-        return sim_dict
-
-
-    def save(self):
-        file_name = find_file_name('Simulation')
-
-        with open(file_name, 'w') as file:
-            json.dump(self.make_dict(), file, indent=3)
-            file.close()
-
-
-    def animation(self, j=1):
-        """Анимация напыления j-ого слоя
-        """
-        x_len = len(self.time_list[j])
-        x_min = self.time_list[j][0]
-        x_max = self.time_list[j][x_len - 1]
-
-        fig, ax = plt.subplots()
-        ax.set_xlim(x_min, x_max)
-        ax.set_ylim(0., 1.)
-        line, = ax.plot(0., 0.)
-
-        x_data = []
-        y_data = []
-
-        def animation_frame(i: int):
-            """Отрисовка линии до i_end точки на j-ом слое
-            """
-            x_data.append(self.time_list[j][i])
-            y_data.append(self.flux_meas[j][i])
-
-            line.set_xdata(x_data)
-            line.set_ydata(y_data)
-            return line,
-
-        animation = FuncAnimation(fig, func=animation_frame, frames=range(x_len), interval=1)
-        plt.show()
-
-
 def increase_admittance(A_re, A_im, wavelength, d, n):
     phi = (2. * np.pi / wavelength) * d * n
     sin_phi = math.sin(phi)
@@ -745,49 +664,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength)
 
 
-class StatInfo:
-    def __init__(self, des_th: Design, term_algs, set_up_pars, err_list, start_rnd_seed):
-        self.err_list = err_list
-        self.start_rnd_seed = start_rnd_seed
-        self.des = des_th
-        self.set_up_pars = set_up_pars
-        self.term_algs = term_algs
-
-        self.N_sim = len(err_list)
-
-    def make_dict(self):
-        stat_dict = {'design': self.des.name, 'start_rnd_seed': self.start_rnd_seed, 'error list': self.err_list,
-                     'term_algs': self.term_algs}
-        return stat_dict
-
-    def save(self):
-        file_name = find_file_name('Statistic')
-
-        with open(file_name, 'w') as file:
-            json.dump(self.make_dict(), file, indent=3)
-            file.close()
-
-    def save_plain_txt(self):
-        file_name = find_file_name('Statistic', ext='.txt')
-
-        n = len(self.err_list)
-        m = len(self.err_list[0])
-
-        with open(file_name, 'w') as file:
-            for i in range(n):
-                for j in range(m):
-                    print(self.err_list[i][j], end='\t', file=file)
-                print('', file=file)
-            file.close()
 
 
-def collect_statistics(des_th, term_algs, set_up_pars, N_sim, start_rnd_seed=10000000):
 
-    err_list = N_sim * [[]]
 
-    for x in range(N_sim):
-        rnd_seed = start_rnd_seed + x
-        res = simulation(des_th, term_algs, set_up_pars, rnd_seed)
-        err_list[x] = res.errors_d[1:des_th.N + 1]
-
-    return StatInfo(des_th, term_algs, set_up_pars, err_list, start_rnd_seed)
