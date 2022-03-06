@@ -1,7 +1,7 @@
 from opticalcoating.statistics_info import StatInfo
 from opticalcoating.deposition_simulation import simulation
 
-def collect_statistics(des_th, term_algs, set_up_pars, N_sim, start_rnd_seed=10000000):
+def collect_statistics(*, des_th, term_algs, set_up_pars, N_sim, start_rnd_seed=10000000):
 
     err_list = N_sim * [[]]
 

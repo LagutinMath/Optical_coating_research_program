@@ -1,6 +1,7 @@
 from opticalcoating.save_data import find_file_name
 import json
 
+
 class StatInfo:
     def __init__(self, des_th, term_algs, set_up_pars, err_list, start_rnd_seed):
         self.err_list = err_list
@@ -35,3 +36,12 @@ class StatInfo:
                     print(self.err_list[i][j], end='\t', file=file)
                 print('', file=file)
             file.close()
+
+
+def load_dict(num):
+    """Загружает данные проведенных симуляций как словарь"""
+    fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
+    print(fname)
+    with open(fname, 'r') as file:
+        return json.load(file)
+
