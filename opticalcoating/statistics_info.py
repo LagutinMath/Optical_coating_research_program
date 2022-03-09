@@ -41,7 +41,6 @@ class StatInfo:
 def load_dict(num):
     """Загружает данные проведенных симуляций как словарь"""
     fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
-    print(fname)
     with open(fname, 'r') as file:
         return json.load(file)
 

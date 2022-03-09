@@ -9,12 +9,12 @@ B = np.loadtxt('Statistics/Statistic003.txt')
 
 
 #------selfcompensation-------------
-delta_sim=np.loadtxt('Statistics/Statistic003.txt')
+delta_sim = np.loadtxt('Statistics/Statistic003.txt')
 M = len(delta_sim[:, 1]) #number of sim
 m = len(delta_sim[1, :]) #number of layers
 des = Design('Z36')
 # wv=np.loadtxt('lambda_list_test.txt')
-wv=[Wave(x) for x in range(400,642,2)]+[Wave(x) for x in range(680,802,2)]
+wv = [Wave(x) for x in range(400, 642, 2)] + [Wave(x) for x in range(680, 802, 2)]
 T_target=121*[1,]+61*[0,]
 # print(len(wv))
 # print(len(T_target))
@@ -36,7 +36,7 @@ delta_random=rnd_generation(M,m,inv)
 mean_delta_MF_rnd = mean_delta_MF_rnd_calc(M, des, wv, T_target, MF_d_th, delta_random)
 print(mean_delta_MF_rnd)
 
-c_array = np.zeros((M,1))
+c_array = np.zeros((M, 1))
 for i in range(M):
     c_array[i] = c_calc(des, wv, T_target, MF_d_th, delta_sim[i,:], mean_delta_MF_rnd)
 mean_value_c = np.mean(c_array)

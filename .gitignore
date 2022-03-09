@@ -24,6 +24,7 @@ Statistics/
 MATLAB_files/
 Data/
 RE_functionals.py
-test.py
-test02.py
+performance_up.py
+test*
+research_script*
 

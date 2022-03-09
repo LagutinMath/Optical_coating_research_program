@@ -56,6 +56,8 @@ class Design:
             self.witnesses = witness_layers
         # текущий наблюдаемый свидетель
         self.w_cur = 0
+        self.n_memory = {}
+        self.xi_memory = {}
 
 
     def witness_num(self, layer):
@@ -105,27 +107,38 @@ class Design:
         if self.q_n_const:
             ans = self.n_const[layer_num]
         else:
-            layer_material = self.info["mat_inf"][self.info["layers"][layer_num]]
-            if "Sellmeier" in layer_material:
-                ans = Sellmeier_n(layer_material["Sellmeier"], wv.wavelength)
-            elif "Cauchy" in layer_material:
-                ans = Cauchy_n(layer_material["Cauchy"], wv.wavelength)
+            layer_material = self.info["layers"][layer_num]
+            layer_material_info = self.info["mat_inf"][layer_material]
+            if (layer_material, wv) in self.n_memory:
+                ans = self.n_memory[(layer_material, wv)]
             else:
-                f_interp = interp1d(layer_material["Table"]["wavelength"], layer_material["Table"]["n"])
-                ans = float(f_interp(wv.wavelength))
+                if "Sellmeier" in layer_material_info:
+                    ans = Sellmeier_n(layer_material_info["Sellmeier"], wv.wavelength)
+                elif "Cauchy" in layer_material_info:
+                    ans = Cauchy_n(layer_material_info["Cauchy"], wv.wavelength)
+                else:
+                    f_interp = interp1d(layer_material_info["Table"]["wavelength"], layer_material_info["Table"]["n"])
+                    ans = float(f_interp(wv.wavelength))
+                self.n_memory[(layer_material, wv)] = ans
         return ans
 
 
     def xi(self, layer_num, wv):
         if self.q_n_const:
-            return 0.0
+            ans = 0.0
         else:
-            layer_material = self.info["mat_inf"][self.info["layers"][layer_num]]
-            if "xi" in layer_material["Table"]:
-                f_interp = interp1d(layer_material["Table"]["wavelength"], layer_material["Table"]["xi"])
-                return float(f_interp(wv.wavelength))
+            layer_material = self.info["layers"][layer_num]
+            layer_material_info = self.info["mat_inf"][layer_material]
+            if (layer_material, wv) in self.xi_memory:
+                ans = self.xi_memory[(layer_material, wv)]
             else:
-                return 0.0
+                if "xi" in layer_material_info["Table"]:
+                    f_interp = interp1d(layer_material_info["Table"]["wavelength"], layer_material_info["Table"]["xi"])
+                    ans = float(f_interp(wv.wavelength))
+                else:
+                    ans = 0.0
+            self.xi_memory[(layer_material, wv)] = ans
+        return ans
 
 
     def wv_bnd(self, layer_num):

@@ -20,7 +20,6 @@ def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q
         w_num = des.witness_num(layer)
     else:
         w_num = des.w_cur
-
     M = [[1.0, 0.0], [0.0, 1.0]]
     for j in des.witnesses[w_num]:
         if wv.angle == 0:
