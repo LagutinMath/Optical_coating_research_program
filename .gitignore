@@ -21,10 +21,12 @@ lolik_test.py
 lolik_test_mashine.py
 Simulations/
 Statistics/
+Pictures/
 MATLAB_files/
 Data/
 RE_functionals.py
 performance_up.py
 test*
 research_script*
+c_script.py
 
