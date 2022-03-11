@@ -5,6 +5,7 @@ from opticalcoating.statistics_info import load_dict
 from matplotlib import rc
 from opticalcoating.save_data import find_file_name
 
+
 def sigmas_plot(statistic_num, *, show=False):
     font_properties = {'size': 22,
                        'family': 'Times New Roman'}

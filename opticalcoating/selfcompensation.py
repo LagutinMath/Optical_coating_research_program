@@ -2,13 +2,13 @@ import numpy as np
 from opticalcoating.calc_flux import calc_flux
 
 
-def MF_calc(des, wv, T_target):
+def MF_calc(des, wv, T_target, q_percent=False):
     # T_target not in persent too
     L = len(wv)
     T_array = np.zeros((L, 1))
     A_array = np.zeros((L, 1))
     for i in range(L):
-        T_array[i] = calc_flux(des, wv[i], q_subs=False, q_percent=False, n_a=1, q_TR='T')
+        T_array[i] = calc_flux(des, wv[i], q_subs=False, q_percent=q_percent, q_TR='T')
         A_array[i] = (T_array[i] - T_target[i])**2
 
     MF = np.sqrt(np.sum(A_array) / L)

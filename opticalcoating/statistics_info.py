@@ -1,5 +1,10 @@
-from opticalcoating.save_data import find_file_name
 import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from opticalcoating.save_data import find_file_name
+import numpy as np
+import seaborn as sns
 
 
 class StatInfo:
@@ -43,4 +48,55 @@ def load_dict(num):
     fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
     with open(fname, 'r') as file:
         return json.load(file)
+
+
+def mean_error_norm(num):
+    info = load_dict(num)
+    errors = pd.DataFrame(info['error list'])
+    M, N = errors.shape
+    errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
+
+    return errors_norm.mean()
+
+
+def error_norm_hist(num, *, show=False):
+    info = load_dict(num)
+    errors = pd.DataFrame(info['error list'])
+    M, N = errors.shape
+    errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
+
+    font_properties = {'size': 22,
+                       'family': 'Times New Roman'}
+    rc('font', **font_properties)
+
+    plt.figure(figsize=(16, 9))
+    sns.histplot(data=errors_norm, bins=40)
+    plt.xlim(0., errors_norm.max())
+    plt.xlabel('Значение нормы вектора ошибок')
+    plt.ylabel('Число симуляций')
+    plt.savefig(find_file_name('Picture', '.png'))
+
+    if show:
+        plt.show()
+
+
+def error_rms_bar(num, *, show=False):
+    info = load_dict(num)
+    errors = pd.DataFrame(info['error list'])
+    M, N = errors.shape
+    errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j])/np.sqrt(M) for j in range(N)])
+
+    font_properties = {'size': 22,
+                       'family': 'Times New Roman'}
+    rc('font', **font_properties)
+
+    plt.figure(figsize=(16, 9))
+    plt.bar(x=range(1, N + 1), height=errors_rms)
+    plt.xlim(1 - 0.5, N + 0.5)
+    plt.xlabel('Номер слоя')
+    plt.ylabel('Среднеквадратичная ошибка на слое, нм')
+    plt.savefig(find_file_name('Picture', '.png'))
+
+    if show:
+        plt.show()
 
