@@ -24,6 +24,7 @@ Statistics/
 Pictures/
 MATLAB_files/
 Data/
+c_values/
 RE_functionals.py
 performance_up.py
 test*

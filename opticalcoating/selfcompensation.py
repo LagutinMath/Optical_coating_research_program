@@ -44,10 +44,5 @@ def c_calc(des, wv, T_target, MF_d_th, delta_sim, mean_delta_MF_rnd):
 
 def rnd_generation(M, N, inv):
     # additive errors case
-    rnd_matrix = np.zeros((M, N))
-    for i in range(M):
-        for j in range(N):
-            rnd_matrix[i, j] = np.random.normal(0., inv/np.sqrt(N))
-
-    return rnd_matrix
+    return np.random.normal(0., inv/np.sqrt(N), size=(M, N))
 
