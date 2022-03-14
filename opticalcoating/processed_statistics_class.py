@@ -64,7 +64,7 @@ class ProcessedStatistics:
             file.close()
 
 
-    def c_hist(self, *, show=False):
+    def c_hist(self, *, show=False, xmax=None):
         font_properties = {'size': 22,
                            'family': 'Times New Roman'}
         rc('font', **font_properties)
@@ -73,7 +73,9 @@ class ProcessedStatistics:
 
         plt.figure(figsize=(16, 9))
         sns.histplot(data=lolik, bins=40)
-        plt.xlim(0., lolik.max())
+        if xmax is None:
+            xmax = lolik.max()
+        plt.xlim(0., 1.05 * xmax)
         plt.xlabel('Значение c')
         plt.ylabel('Число симуляций')
         plt.savefig(find_file_name('Picture', '.png'))

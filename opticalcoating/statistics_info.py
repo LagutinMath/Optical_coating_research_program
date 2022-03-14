@@ -59,7 +59,7 @@ def mean_error_norm(num):
     return errors_norm.mean()
 
 
-def error_norm_hist(num, *, show=False):
+def error_norm_hist(num, *, show=False, xmax=None):
     info = load_dict(num)
     errors = pd.DataFrame(info['error list'])
     M, N = errors.shape
@@ -71,7 +71,9 @@ def error_norm_hist(num, *, show=False):
 
     plt.figure(figsize=(16, 9))
     sns.histplot(data=errors_norm, bins=40)
-    plt.xlim(0., errors_norm.max())
+    if xmax is None:
+        xmax = errors_norm.max()
+    plt.xlim(0., 1.05 * xmax)
     plt.xlabel('Значение нормы вектора ошибок')
     plt.ylabel('Число симуляций')
     plt.savefig(find_file_name('Picture', '.png'))
@@ -80,7 +82,7 @@ def error_norm_hist(num, *, show=False):
         plt.show()
 
 
-def error_rms_bar(num, *, show=False):
+def error_rms_bar(num, *, show=False, ymax=None):
     info = load_dict(num)
     errors = pd.DataFrame(info['error list'])
     M, N = errors.shape
@@ -93,6 +95,9 @@ def error_rms_bar(num, *, show=False):
     plt.figure(figsize=(16, 9))
     plt.bar(x=range(1, N + 1), height=errors_rms)
     plt.xlim(1 - 0.5, N + 0.5)
+    if ymax is None:
+        ymax = max(errors_rms)
+    plt.ylim(0., 1.05 * ymax)
     plt.xlabel('Номер слоя')
     plt.ylabel('Среднеквадратичная ошибка на слое, нм')
     plt.savefig(find_file_name('Picture', '.png'))
