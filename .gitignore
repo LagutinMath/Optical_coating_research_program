@@ -14,7 +14,6 @@ study_interpolate.ipynb
 study_json.ipynb
 study_perfomance_counter.ipynb
 study_random.ipynb
-test.ipynb
 lagutina_main.py
 optorun.py
 lolik_test.py
@@ -23,11 +22,9 @@ Simulations/
 Statistics/
 Pictures/
 MATLAB_files/
-Data/
 c_values/
-RE_functionals.py
-performance_up.py
+log/
 test*
 research_script*
-c_script.py
+
 

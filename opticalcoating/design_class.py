@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import opticalcoating.calc_flux as cf
 from opticalcoating.calc_flux import Wave
 from math import inf
+from opticalcoating.save_data import find_file_name
 
 
 class Design:
@@ -154,20 +155,22 @@ class Design:
                 return [layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]]
 
 
-    def thickness_plot(self):
+    def thickness_plot(self, show=False):
         # Сделать картинку во весь экран для 27 дюймового монитора
         # diag = math.sqrt(16**2 + 9**2)
         # ipseg = 27/diag  # inches per segment
         # fig = plt.figure('Thicknesses', figsize=(16 * ipseg, 9 * ipseg))
-
         fig = plt.figure('Thicknesses', figsize=(16, 9))
         ax = fig.add_subplot()
         ax.bar(range(1, self.N + 1, 2), self.d[1:self.N + 1:2], color='b')
         ax.bar(range(2, self.N + 1, 2), self.d[2:self.N + 1:2], color='r')
+        plt.xlim([0.5, self.N + 0.5])
         plt.xlabel('Layer number')
         plt.ylabel('Physical thickness, nm')
         # plt.title('Design physical d')
-        plt.show()
+        plt.savefig(find_file_name('Picture', '.png'))
+        if show:
+            plt.show()
 
 
     def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None):
@@ -175,18 +178,21 @@ class Design:
                             layer=layer)
 
 
-    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000):
+    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
         ax = fig.add_subplot()
         x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
         y_range = N_pts * [0.0]
         for i in range(N_pts):
-            y_range[i] = self.calc_flux(Wave(x_range[i]), q_percent=True, q_TR=q_TR)
+            y_range[i] = self.calc_flux(Wave(x_range[i]), q_percent=True, q_TR=q_TR, q_subs=q_subs)
         ax.plot(x_range, y_range)
+        plt.ylim([0, 100])
         plt.xlabel('Wavelength, nm')
-        plt.ylabel('T, %')
+        plt.ylabel(q_TR + ', %')
         # plt.title('Design physical d')
-        plt.show()
+        plt.savefig(find_file_name('Picture', '.png'))
+        if show:
+            plt.show()
 
 
 def Sellmeier_n(coef_A, wvlen):

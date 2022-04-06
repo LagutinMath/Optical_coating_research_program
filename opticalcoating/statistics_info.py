@@ -42,7 +42,7 @@ class StatInfo:
                 print('', file=file)
             file.close()
 
-
+# "C:\\Users\\Iurii\\Downloads\\debian-11.2.0-amd64-netinst.iso"
 def load_dict(num):
     """Загружает данные проведенных симуляций как словарь"""
     fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
