@@ -168,9 +168,10 @@ class Design:
         plt.xlabel('Layer number')
         plt.ylabel('Physical thickness, nm')
         # plt.title('Design physical d')
-        plt.savefig(find_file_name('Picture', '.png'))
         if show:
             plt.show()
+        else:
+            plt.savefig(find_file_name('Picture', '.png'))
 
 
     def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None):
@@ -190,9 +191,10 @@ class Design:
         plt.xlabel('Wavelength, nm')
         plt.ylabel(q_TR + ', %')
         # plt.title('Design physical d')
-        plt.savefig(find_file_name('Picture', '.png'))
         if show:
             plt.show()
+        else:
+            plt.savefig(find_file_name('Picture', '.png'))
 
 
 def Sellmeier_n(coef_A, wvlen):

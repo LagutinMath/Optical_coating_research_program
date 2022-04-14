@@ -6,18 +6,21 @@ class MonochromaticDeposition():
         self.des_th = copy.deepcopy(des_th)
         self.set_up_pars = set_up_pars
         self.str_info = MonochromStrategyInfo(des_th, set_up_pars)
-        self.nonloc_alg = [DataNonloc(j, des_th, set_up_pars) for j in range(1, des_th.N + 1)]
+        self.nonloc_alg = [None] + [DataNonloc(j, des_th, set_up_pars) for j in range(1, des_th.N + 1)]
         self.t_scan = t_scan
+        self.dt = 0.
 
 
-    def update(self, j, flux_meas, dt=None):
+    def update(self, j, flux_meas, t_scan=None):
         """Обновление данных объекта
         :param flux_meas: измеренный на слое j коэф. проп./отр в абс. величинах T/R in [0., 1.]
-        :param dt: шаг по времени"""
-        if dt is None:
-            dt = self.t_scan
+        :param dt: сколько времени прошло с начала напыления слоя"""
+        if t_scan is None:
+            self.dt += self.t_scan
+        else:
+            self.dt += t_scan
         self.j = j
-        self.nonloc_alg[j].refresh(dt, flux_meas, self.set_up_pars.q_TR[j])
+        self.nonloc_alg[j].refresh(self.dt, flux_meas, self.set_up_pars.q_TR[j])
 
 
     def term_time_predict(self, term_algs='Elimination'):
