@@ -42,7 +42,7 @@ class StatInfo:
                 print('', file=file)
             file.close()
 
-# "C:\\Users\\Iurii\\Downloads\\debian-11.2.0-amd64-netinst.iso"
+
 def load_dict(num):
     """Загружает данные проведенных симуляций как словарь"""
     fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
@@ -76,10 +76,11 @@ def error_norm_hist(num, *, show=False, xmax=None):
     plt.xlim(0., 1.05 * xmax)
     plt.xlabel('Значение нормы вектора ошибок')
     plt.ylabel('Число симуляций')
-    plt.savefig(find_file_name('Picture', '.png'))
 
     if show:
         plt.show()
+    else:
+        plt.savefig(find_file_name('Picture', '.png'))
 
 
 def error_rms_bar(num, *, show=False, ymax=None):
@@ -100,8 +101,9 @@ def error_rms_bar(num, *, show=False, ymax=None):
     plt.ylim(0., 1.05 * ymax)
     plt.xlabel('Номер слоя')
     plt.ylabel('Среднеквадратичная ошибка на слое, нм')
-    plt.savefig(find_file_name('Picture', '.png'))
 
     if show:
         plt.show()
+    else:
+        plt.savefig(find_file_name('Picture', '.png'))
 

@@ -24,8 +24,9 @@ def sigmas_plot(statistic_num, *, show=False, ymax=None):
     plt.ylim(0., 1.05 * ymax)
     plt.xlabel('Номер собственного вектора')
     plt.ylabel('Стандартное отклонение ошибки, нм')
-    plt.savefig(find_file_name('Picture', '.png'))
 
     if show:
         plt.show()
+    else:
+        plt.savefig(find_file_name('Picture', '.png'))
 

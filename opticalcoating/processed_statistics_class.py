@@ -78,8 +78,9 @@ class ProcessedStatistics:
         plt.xlim(0., 1.05 * xmax)
         plt.xlabel('Значение c')
         plt.ylabel('Число симуляций')
-        plt.savefig(find_file_name('Picture', '.png'))
 
         if show:
             plt.show()
+        else:
+            plt.savefig(find_file_name('Picture', '.png'))
 

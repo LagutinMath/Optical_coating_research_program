@@ -43,7 +43,8 @@ def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, control_wv=10
     plt.ylim(0., 100.)
     plt.xlabel(f'Оптическая толщина покрытия (контрольная длина волны = {control_wv} нм), нм')
     plt.ylabel(q_TR + ', %')
-    plt.savefig(find_file_name('Picture', '.png'))
 
     if show:
         plt.show()
+    else:
+        plt.savefig(find_file_name('Picture', '.png'))
