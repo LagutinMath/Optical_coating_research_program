@@ -11,15 +11,22 @@ from opticalcoating.save_data import find_file_name
 
 
 class ProcessedStatistics:
-    def __init__(self, *, des=None, target=None, statistic_num=None):
+    def __init__(self, *, des=None, target=None, statistic_num=None, k=None):
         init1 = (des is not None and target is not None and statistic_num is not None)
-        init2 = (des is None and target is None and statistic_num is not None)
+        init2 = (des is None and target is None and statistic_num is not None and k is None)
+        init3 = (des is None and target is None and statistic_num is not None and k is not None)
         if init1:
             waves, T_target = target
             self.statistic_num = statistic_num
             self.MF_d_th = MF_calc(des, waves, T_target)
             sim_error_list = load_dict(statistic_num)
             sim_errors = pd.DataFrame(sim_error_list['error list'])
+            # slice
+            # взятие некоторой части симуляций из файла (к первых симуляций)
+            if k is None:
+                k = len(sim_errors)
+            sim_errors = sim_errors[:k]
+
             # Число симуляций:
             self.M = len(sim_errors)
 
@@ -27,12 +34,12 @@ class ProcessedStatistics:
             median_val = np.median(sim_errors_norm)
             self.rnd_errors = pd.DataFrame(rnd_generation(self.M, des.N, median_val))
 
-            delta_MF_rnd = [delta_MF_calc(des, waves, T_target, self.MF_d_th, self.rnd_errors.iloc[i, :]) for i in range(self.M)]
-            self.mean_delta_MF_rnd = np.mean(delta_MF_rnd)
+            self.delta_MF_rnd = np.array([delta_MF_calc(des, waves, T_target, self.MF_d_th, self.rnd_errors.iloc[i, :]) for i in range(self.M)])
+            self.mean_delta_MF_rnd = np.mean(self.delta_MF_rnd)
 
-            delta_MF_sim = np.array([delta_MF_calc(des, waves, T_target, self.MF_d_th, sim_errors.iloc[i, :]) for i in
+            self.delta_MF_sim = np.array([delta_MF_calc(des, waves, T_target, self.MF_d_th, sim_errors.iloc[i, :]) for i in
                                  range(self.M)])
-            self.c_array = delta_MF_sim / self.mean_delta_MF_rnd
+            self.c_array = self.delta_MF_sim / self.mean_delta_MF_rnd
             self.c_value = self.c_array.mean()
         elif init2:
             file_name = 'c_values/c_value' + str(statistic_num).zfill(3) + '.json'
@@ -43,16 +50,33 @@ class ProcessedStatistics:
             self.statistic_num = statistic_num
             self.MF_d_th = info_dict['MF_d_th']
             self.rnd_errors = pd.DataFrame(info_dict['rnd_error_list'])
+            self.delta_MF_rnd = np.array(info_dict['delta_MF_rnd'])
             self.mean_delta_MF_rnd = info_dict['mean_delta_MF_rnd']
+            self.delta_MF_sim = np.array(info_dict['delta_MF_sim'])
             self.c_array = np.array(info_dict['c_array'])
             self.c_value = info_dict['c_value']
+        elif init3:
+            file_name = 'c_values/c_value' + str(statistic_num).zfill(3) + '.json'
+            with open(file_name, 'r') as file:
+                info_dict = json.load(file)
+                file.close()
+
+            self.statistic_num = statistic_num
+            self.MF_d_th = info_dict['MF_d_th']
+            self.rnd_errors = pd.DataFrame(info_dict['rnd_error_list'][:k])
+            self.delta_MF_rnd = np.array(info_dict['delta_MF_rnd'][:k])
+            self.mean_delta_MF_rnd = np.mean(self.delta_MF_rnd)
+            self.delta_MF_sim = np.array(info_dict['delta_MF_sim'][:k])
+            self.c_array = self.delta_MF_sim / self.mean_delta_MF_rnd
+            self.c_value = self.c_array.mean()
         else:
             raise NameError('Wrong Initialization')
 
 
     def make_dict(self):
         sim_dict = {'MF_d_th': self.MF_d_th, 'rnd_error_list': self.rnd_errors.values.tolist(),
-                    'mean_delta_MF_rnd': self.mean_delta_MF_rnd, 'c_array': self.c_array.tolist(), 'c_value': self.c_value}
+                    'delta_MF_rnd': self.delta_MF_rnd.tolist(), 'mean_delta_MF_rnd': self.mean_delta_MF_rnd,
+                    'delta_MF_sim': self.delta_MF_sim.tolist(), 'c_array': self.c_array.tolist(), 'c_value': self.c_value}
         return sim_dict
 
 
