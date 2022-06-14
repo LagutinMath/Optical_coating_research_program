@@ -656,6 +656,10 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                     term_cond_case[j] = 3
 
                 if term_cond:
+                    # Ошибка времени закрытия заслонки
+                    shutter_delay_dt = norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+                    # На этом шаге прирост толщины может быть и положительным и отрицательным
+                    des_act.increase_layer_thickness(j, shutter_delay_dt * cur_rate)
                     break
         else:
             raise NameError(f'Overflow simulation error on seed = {rnd_seed}')
