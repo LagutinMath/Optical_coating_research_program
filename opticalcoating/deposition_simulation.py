@@ -587,6 +587,11 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
         # напыление слоя
         # while not term_cond:
         for lsc in range(1, max_steps):
+            if term_algs[j] == 'Relative Thickness Error':
+                term_cond_case[j] = 1
+                des_act.increase_layer_thickness(j, des_th.d[j] * (1. + norm_3sigma_rnd(rng, sigma=0.01)))
+                break
+
             # шаг *изменения состояния природы*
             dt += delta_t
             cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
