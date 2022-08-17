@@ -5,11 +5,11 @@ from opticalcoating.save_data import find_file_name
 from opticalcoating.calc_flux import Wave
 
 
-def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, control_wv=1000 ,show=False, lang='eng'):
+def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, control_wv=1000, show=False, lang='eng'):
     term_algs = (des.N + 1) * ['Elimination']
     # стратегия waves q_TR, backside, (?) witness_layers
     set_up_pars = SetUpParameters(N=des.N, waves=waves, q_TR=q_TR, backside=backside)
-    sim_res = simulation(des, term_algs, set_up_pars, rnd_seed=None)
+    sim_res = simulation(des, term_algs, set_up_pars, rnd_seed=None, q_subs=q_subs)
 
     font_properties = {'size': 22,
                        'family': 'Times New Roman'}

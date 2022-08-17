@@ -42,6 +42,17 @@ class StatInfo:
                 print('', file=file)
             file.close()
 
+    def mean_error_norm(self):
+        errors = pd.DataFrame(self.err_list)
+        M, N = errors.shape
+        errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
+        return errors_norm.mean()
+
+    def error_rms(self):
+        errors = pd.DataFrame(self.err_list)
+        M, N = errors.shape
+        errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j]) / np.sqrt(M) for j in range(N)])
+        return errors_rms
 
 def load_dict(num):
     """Загружает данные проведенных симуляций как словарь"""

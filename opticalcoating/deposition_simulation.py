@@ -55,7 +55,6 @@ class SetUpParameters:
         """
         pass
 
-
 def autofill(x, *, N):
     if x is None:
         return (N + 1) * [0.]
@@ -65,7 +64,6 @@ def autofill(x, *, N):
         else:
             return x
 
-
 def num_step_estimation(des: Design, set_up_pars: SetUpParameters):
     """Вычисление оценки кол-ва шагов в предстоящей симуляции"""
     r = set_up_pars.rates
@@ -74,7 +72,6 @@ def num_step_estimation(des: Design, set_up_pars: SetUpParameters):
     for j in range(1, des.N + 1):
         total_time += des.d[j] / r[j]
     return 10 * math.ceil(total_time / tau)
-
 
 def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
     """Возвращает лист нужный для генерации пустых списков для предстоящей симуляции
@@ -89,7 +86,6 @@ def num_step_layer_estimation(des: Design, set_up_pars: SetUpParameters):
     max_step = math.ceil(max_step / tau)
     return des.N + 1, 10 * max_step
 
-
 def norm_3sigma_rnd(rng, *, mean=0.0, sigma=0.0):
     """Функция возвращает нормально распределенную случайную величину,
     с ненулевым мат.ожиданием, которая модифицирована так, чтобы
@@ -101,7 +97,6 @@ def norm_3sigma_rnd(rng, *, mean=0.0, sigma=0.0):
         rnd_val = mean - 3.0 * sigma
     return rnd_val
 
-
 def my_atan(x: float, y: float):
     if x > 0:
         if y >= 0:
@@ -112,7 +107,6 @@ def my_atan(x: float, y: float):
         return np.pi + math.atan(y / x)
     else:  # (x == 0)
         return 1.5 * np.pi if (y < 0) else 0.5 * np.pi
-
 
 def num_cutoffs(theta: float, phi: float):
     """Количество точек pi * n принадлежащих (theta, theta + 2 * phi), где n --- целое"""
@@ -229,7 +223,6 @@ class NonlocCoef:
             elif q_TR == 'T':
                 return 'max'
 
-
 def R_full(R_1, R_2, d_s, xi, wvlen):
     """Полное отражение нормально падающего света от системы c двумя поверхностями,
     между которыми не происходит интерференции
@@ -240,7 +233,6 @@ def R_full(R_1, R_2, d_s, xi, wvlen):
     sgm = math.exp(- 4 * pi * d_s * xi / wvlen)
     return R_1 + (sgm**2 * R_2 * (1 - R_1)**2)/(1 - sgm**2 * R_1 * R_2)
 
-
 def T_full(T_1, T_2, d_s, xi, wvlen):
     """Полное пропускание нормально падающего света системы c двумя поверхностями,
     между которыми не происходит интерференции
@@ -250,7 +242,6 @@ def T_full(T_1, T_2, d_s, xi, wvlen):
     :param xi: поглощение в среде между поверхностями"""
     sgm = math.exp(- 4 * pi * d_s * xi / wvlen)
     return sgm * T_1 * T_2 / (1 - sgm**2 * (1 - T_1) * (1 - T_2))
-
 
 def theor_nonloccoef(A_re: float, A_im: float, n_j: float, n_s: float, only_front_side=False):
     """Вычисляет нелок.коэф-ты по адмиттансу (с учетом отражения от задней стороны подложки)
@@ -434,7 +425,6 @@ class DataNonloc:
     #     else:
     #         return 0.0
 
-
 def increase_admittance(A_re, A_im, wavelength, d, n):
     phi = (2. * np.pi / wavelength) * d * n
     sin_phi = math.sin(phi)
@@ -454,7 +444,7 @@ def increase_admittance(A_re, A_im, wavelength, d, n):
 
 
 class MonochromStrategyInfo:
-    def __init__(self, des_th: Design, set_up_pars: SetUpParameters):
+    def __init__(self, des_th: Design, set_up_pars: SetUpParameters, q_subs=True):
         """Содержит информацию о значениях энергетических коэф. T/R
         в начале напыления слоя, в конце напыления слоя и экстремумы,
         которые могут достигаться при достаточной толщине слоя
@@ -473,7 +463,7 @@ class MonochromStrategyInfo:
         for j_cur in range(1, des_th.N + 1):
             wavelength = set_up_pars.waves[j_cur].wavelength
             n_s = des_th.n(0, set_up_pars.waves[j_cur])
-            if set_up_pars.backside:
+            if set_up_pars.backside or not q_subs:
                 R_1 = ((n_s - 1.) / (n_s + 1)) ** 2
                 T_1 = 1. - R_1
             A_re = n_s
@@ -484,7 +474,7 @@ class MonochromStrategyInfo:
                 A_re, A_im = increase_admittance(A_re, A_im, wavelength, d, n)
 
             n_j_cur = des_th.n(j_cur, set_up_pars.waves[j_cur])
-            if set_up_pars.backside:
+            if set_up_pars.backside or not q_subs:
                 abg = theor_nonloccoef(A_re, A_im, n_j_cur, n_s, only_front_side=True)
                 d_s = des_th.d[0]
                 xi = des_th.xi(j_cur, wavelength)
@@ -533,11 +523,10 @@ class MonochromStrategyInfo:
                     self.prev_extr[j_cur] = R_full(R_1, self.prev_extr[j_cur], d_s, xi, wv)
             self.q_prev_extr[j_cur] = abg.q_prev_extr(phi, set_up_pars.q_TR[j_cur])
 
-
-def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
+def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True):
     if rnd_seed is None:
         rnd_seed = datetime.now().time().microsecond
-    str_info = MonochromStrategyInfo(des_th, set_up_pars)
+    str_info = MonochromStrategyInfo(des_th, set_up_pars, q_subs=q_subs)
     rng = np.random.default_rng(rnd_seed)
     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
@@ -548,6 +537,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
     # flux_act = np.empty(len_sim_list, dtype=float)
 
     time_list = [[0.0] for _ in range(des_th.N + 1)]
+    d_j_act_t = [[0.0] for _ in range(des_th.N + 1)]
     flux_meas = [[0.0] for _ in range(des_th.N + 1)]
     flux_act = [[0.0] for _ in range(des_th.N + 1)]
 
@@ -562,7 +552,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
         # des_act.n_fix[0][j] = des_act.n(j, set_up_pars.waves[j])\
         #         * (1 + norm_3sigma_rnd(rng, mean=set_up_pars.r_index_syst[j], sigma=set_up_pars.r_index_sigmas[j]))
         # На новом слое получем теоретическое theta (можно просто оценить, но мы получим точно)
-        nonloc_coef_th = MonochromStrategyInfo(des_act, set_up_pars).nonloc_coef[j]
+        nonloc_coef_th = MonochromStrategyInfo(des_act, set_up_pars, q_subs=q_subs).nonloc_coef[j]
         theta_th = nonloc_coef_th[-1]
 
         # print('j =', j)
@@ -580,7 +570,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
         # lsc = 0  # layer_step_counter
         time_list[j][0] = time_list[j - 1][-1]
         flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                           backside=set_up_pars.backside)
+                                           backside=set_up_pars.backside, q_subs=q_subs)
         flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
         nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -599,8 +589,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
 
             # шаг *измерения и анализа*
             time_list[j].append(time_list[j][-1] + delta_t)
+            d_j_act_t[j].append(des_act.d[j])
             flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                                 backside=set_up_pars.backside))
+                                                 backside=set_up_pars.backside, q_subs=q_subs))
             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
             nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -642,11 +633,11 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
 
-                    if j < des_th.N:
-                        time_list[j].append(time_list[j][-1] + delta_t)
-                        flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                                             backside=set_up_pars.backside))
-                        flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
+                    time_list[j].append(time_list[j][-1] + delta_t)
+                    d_j_act_t[j].append(des_act.d[j])
+                    flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+                                                         backside=set_up_pars.backside, q_subs=q_subs))
+                    flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
 
                 elif dt > t_term:
                     # Termination case 2
@@ -661,16 +652,123 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None):
                     term_cond_case[j] = 3
 
                 if term_cond:
-                    # Ошибка времени закрытия заслонки
-                    shutter_delay_dt = norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
-                    # На этом шаге прирост толщины может быть и положительным и отрицательным
-                    des_act.increase_layer_thickness(j, shutter_delay_dt * cur_rate)
+                    if set_up_pars.delay_time_sigma != 0.0:
+                        # Ошибка времени закрытия заслонки
+                        shutter_delay_dt = norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+                        # На этом шаге прирост толщины может быть и положительным и отрицательным
+                        des_act.increase_layer_thickness(j, shutter_delay_dt * cur_rate)
+                        d_j_act_t[j][-1] = des_act.d[j]
                     break
         else:
             raise NameError(f'Overflow simulation error on seed = {rnd_seed}')
 
     wavelength = [set_up_pars.waves[j].wavelength for j in range(1, des_th.N + 1)]
-    return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength)
+    return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength,
+                   rnd_seed=rnd_seed, d_j_act_t=d_j_act_t, set_up_pars=set_up_pars, des=des_th)
+
+
+# def measurement_simulation(sim_info: SimInfo, waves):
+#     rnd_seed = sim_info.rnd_seed
+#     rng = np.random.default_rng(rnd_seed)
+#
+#     des_th = sim_info.des
+#     set_up_pars = sim_info.set_up_pars
+#     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
+#     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
+#     max_steps = len_sim_list[1]
+#
+#     time_list = [[0.0] for _ in range(des_th.N + 1)]
+#     d_j_act_t = [[0.0] for _ in range(des_th.N + 1)]
+#     flux_meas = [[0.0] for _ in range(des_th.N + 1)]
+#     flux_act = [[0.0] for _ in range(des_th.N + 1)]
+#
+#     # Информация о дизайне в текущий для симуляции момент времени
+#     des_act = copy.deepcopy(des_th)
+#     # des_act.d = np.zeros(des_th.N + 1, dtype=float)
+#     des_act.d = (des_th.N + 1) * [0.0]
+#     # term_cond_case = np.zeros(des_th.N + 1, dtype=float)
+#     term_cond_case = (des_th.N + 1) * [0]
+#
+#     for j in range(1, des_th.N + 1):
+#         term_cond = False
+#
+#         # в конце напыления шаг по времени может быть меньше tau
+#         # поэтому введём переменную delta_t означающую размер интервала времени для выполняемого шага
+#         delta_t = set_up_pars.tau
+#         # dt --- времени прошло с начала напыления слоя
+#         dt = 0.0
+#         expected_interval = False
+#
+#         # шаг *измерения и анализа*
+#         # lsc = 0  # layer_step_counter
+#         time_list[j][0] = time_list[j - 1][-1]
+#         flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+#                                            backside=set_up_pars.backside)
+#         flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
+#
+#         for lsc in range(1, max_steps):
+#
+#             # шаг *изменения состояния природы*
+#             dt += delta_t
+#             cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
+#             des_act.increase_layer_thickness(j, delta_t * cur_rate)
+#
+#             # шаг *измерения и анализа*
+#             time_list[j].append(time_list[j][-1] + delta_t)
+#             d_j_act_t[j].append(des_act.d[j])
+#             flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+#                                                  backside=set_up_pars.backside))
+#             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
+#
+#                 t_term = nonloc_alg.calc_t(d_th=des_th.d[j], lvl=term_flux_lvl, q_TR=set_up_pars.q_TR[j])
+#
+#                 if 0 <= (t_term - dt) <= delta_t:
+#                     # Termination case 1
+#                     # Правильный случай прекращения напыления по уровню
+#                     term_cond = True
+#                     term_cond_case[j] = 1
+#
+#                     # delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
+#                     #     + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+#                     delta_t = t_term - dt
+#
+#                     # шаг *изменения состояния природы*
+#                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
+#                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
+#
+#                     time_list[j].append(time_list[j][-1] + delta_t)
+#                     d_j_act_t[j].append(des_act.d[j])
+#                     flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
+#                                                          backside=set_up_pars.backside))
+#                     flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
+#
+#                 elif dt > t_term:
+#                     # Termination case 2
+#                     # На очередном шаге было обнаружено, что произошло перепыление
+#                     term_cond = True
+#                     term_cond_case[j] = 2
+#
+#                 elif des_act.d[j] > 1.25 * des_th.d[j]:
+#                     # Termination case 3
+#                     # Экстренное прекращение напыления --- остальные критерии не сработали
+#                     term_cond = True
+#                     term_cond_case[j] = 3
+#
+#                 if term_cond:
+#                     if set_up_pars.delay_time_sigma != 0.0:
+#                         # Ошибка времени закрытия заслонки
+#                         shutter_delay_dt = norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
+#                         # На этом шаге прирост толщины может быть и положительным и отрицательным
+#                         des_act.increase_layer_thickness(j, shutter_delay_dt * cur_rate)
+#                         d_j_act_t[j][-1] = des_act.d[j]
+#                     break
+#         else:
+#             raise NameError(f'Overflow simulation error on seed = {rnd_seed}')
+#
+#     wavelength = [set_up_pars.waves[j].wavelength for j in range(1, des_th.N + 1)]
+#     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength, d_j_act_t=d_j_act_t)
+
+
 
 
 
