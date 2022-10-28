@@ -3,11 +3,17 @@ import numpy as np
 import json
 import os.path
 import copy
-import matplotlib.pyplot as plt
 import opticalcoating.calc_flux as cf
 from opticalcoating.calc_flux import Wave
 from math import inf
 from opticalcoating.save_data import find_file_name
+
+import matplotlib.pyplot as plt
+from matplotlib import rc
+
+font_properties = {'size': 22,
+                   'family': 'Times New Roman'}
+rc('font', **font_properties)
 
 
 class Design:
@@ -155,7 +161,7 @@ class Design:
                 return [layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]]
 
 
-    def thickness_plot(self, show=False):
+    def thickness_plot(self, show=False, lang='eng'):
         # Сделать картинку во весь экран для 27 дюймового монитора
         # diag = math.sqrt(16**2 + 9**2)
         # ipseg = 27/diag  # inches per segment
@@ -165,8 +171,12 @@ class Design:
         ax.bar(range(1, self.N + 1, 2), self.d[1:self.N + 1:2], color='b')
         ax.bar(range(2, self.N + 1, 2), self.d[2:self.N + 1:2], color='r')
         plt.xlim([0.5, self.N + 0.5])
-        plt.xlabel('Layer number')
-        plt.ylabel('Physical thickness, nm')
+        if lang == 'ru':
+            plt.xlabel('Номер слоя')
+            plt.ylabel('Физическая толщина d, нм')
+        else:
+            plt.xlabel('Layer number')
+            plt.ylabel('Physical thickness d, nm')
         # plt.title('Design physical d')
         if show:
             plt.show()
@@ -179,7 +189,7 @@ class Design:
                             layer=layer)
 
 
-    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False):
+    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False, lang='eng'):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
         ax = fig.add_subplot()
         x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
@@ -188,7 +198,10 @@ class Design:
             y_range[i] = self.calc_flux(Wave(x_range[i]), q_percent=True, q_TR=q_TR, q_subs=q_subs)
         ax.plot(x_range, y_range)
         plt.ylim([0, 100])
-        plt.xlabel('Wavelength, nm')
+        if lang == 'ru':
+            plt.xlabel('Длина волны, нм')
+        else:
+            plt.xlabel('Wavelength, nm')
         plt.ylabel(q_TR + ', %')
         # plt.title('Design physical d')
         if show:

@@ -9,6 +9,7 @@ Pictures/*
 c_values/*
 Designs/*
 Data/*
+Projects/*
 # Папка для неактуальных скриптов
 log/
 # Названия для рабочих скриптов
@@ -17,6 +18,7 @@ TEST*
 lolik*
 descr*
 research*
+rs_*
 study*
 # Индивидуальные файлы разработчика lagutina-alena
 main.py
