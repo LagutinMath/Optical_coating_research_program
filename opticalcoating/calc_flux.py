@@ -15,13 +15,19 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None):
+def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
     if layer is not None:
         w_num = des.witness_num(layer)
     else:
         w_num = des.w_cur
-    M = [[1.0, 0.0], [0.0, 1.0]]
-    for j in des.witnesses[w_num]:
+
+    # упрощенная процедура вычисления с использованием вычисленной ранее хар-ой матрицы
+    if save_M:
+        if des.j_changed:
+            des.cur_M = des.temp_M
+            des.j_changed = False
+        M = des.cur_M
+        j = des.cur_j
         if wv.angle == 0:
             q_j = n_j = des.n(j, wv)
             phi_j = 2.0 * np.pi * n_j * des.d[j] / wv.wavelength
@@ -40,6 +46,28 @@ def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q
         M_j_11 = cos_phi
 
         M = sp_mat_mult([[M_j_00, M_j_01], [M_j_10, M_j_11]], M)
+        des.temp_M = M
+    else:
+        M = [[1.0, 0.0], [0.0, 1.0]]
+        for j in des.witnesses[w_num]:
+            if wv.angle == 0:
+                q_j = n_j = des.n(j, wv)
+                phi_j = 2.0 * np.pi * n_j * des.d[j] / wv.wavelength
+            else:
+                n_j = des.n(j, wv)
+                gamma_j = np.arcsin(np.sin(wv.angle) * n_a / n_j)
+                q_j = n_j * np.cos(gamma_j) if wv.polarisation == 'S' else n_j / np.cos(gamma_j)
+                phi_j = 2.0 * np.pi * n_j * des.d[j] * np.cos(gamma_j) / wv.wavelength
+
+            cos_phi = np.cos(phi_j)
+            sin_phi = np.sin(phi_j)
+
+            M_j_00 = cos_phi
+            M_j_01 = sin_phi / q_j
+            M_j_10 = sin_phi * q_j
+            M_j_11 = cos_phi
+
+            M = sp_mat_mult([[M_j_00, M_j_01], [M_j_10, M_j_11]], M)
 
     n_s = des.n(0, wv)
     if wv.angle == 0:

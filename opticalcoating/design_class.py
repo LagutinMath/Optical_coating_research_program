@@ -65,6 +65,14 @@ class Design:
         self.w_cur = 0
         self.n_memory = {}
         self.xi_memory = {}
+        # ---
+        # текущее значение хар-ой матрицы
+        self.j_changed = False
+        self.cur_j = 1
+        # хар-кая матрица j-1 слоев
+        self.cur_M = [[1.0, 0.0], [0.0, 1.0]]
+        # полная хар-кая матрица j слоев (cur_M = temp_M во время смены слоя)
+        self.temp_M = [[1.0, 0.0], [0.0, 1.0]]
 
 
     def witness_num(self, layer):
@@ -108,6 +116,9 @@ class Design:
 
     def increase_layer_thickness(self, j, delta_d):
         self.d[j] += delta_d
+        if self.cur_j != j:
+            self.j_changed = True
+            self.cur_j = j
 
 
     def n(self, layer_num, wv):
@@ -184,9 +195,9 @@ class Design:
             plt.savefig(find_file_name('Picture', '.png'))
 
 
-    def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None):
+    def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
         return cf.calc_flux(self, wv, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a, q_TR=q_TR,
-                            layer=layer)
+                            layer=layer, save_M=save_M)
 
 
     def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False, lang='eng'):
