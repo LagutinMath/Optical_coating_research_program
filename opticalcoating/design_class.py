@@ -105,7 +105,6 @@ class Design:
 
 
     def create_json(self):
-        print(1)
         fname = 'Designs/' + self.name + '.json'
         print(fname)
         if not os.path.isfile(fname):
