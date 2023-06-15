@@ -599,9 +599,9 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
             if (not nonloc_alg.exist_coef) or (des_act.d[j] < 0.7 * des_th.d[j]):
                 continue
             else:
-                if term_algs[j] == 'Elimination':
+                if term_algs[j] in ('Elimination', 'TM'):
                     term_flux_lvl = nonloc_alg.flux(des_th.d[j], set_up_pars.q_TR[j])
-                elif term_algs[j] == 'Quasiswing':
+                elif term_algs[j] in ('Quasiswing', 'QS'):
                     # turn = nonloc_alg.prev_extr(des_th.d[j], set_up_pars.q_TR[j])
                     q_turn = str_info.q_prev_extr[j]
                     if q_turn == 'max':
@@ -613,7 +613,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
                 # elif term_algs[j] == 'Pseudoswing':
                 #     # Не готово
                 #     lvl = 0.0
-                elif term_algs[j] == 'None':
+                elif term_algs[j] in ('None', 'LM'):
                     term_flux_lvl = str_info.term[j]
                 else:
                     raise NameError(f'Uncorrect termination algoritm for layer {j}')
