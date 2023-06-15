@@ -66,12 +66,15 @@ def processing_stat(num_stat, dir_name):
 
     # Построим и сохраним картинку
     Path('Data_to_process/' + dir_name + '/Pictures').mkdir(exist_ok=True)
-    fname_pic = 'Data_to_process/' + dir_name + '/Pictures/Picture' + str(num_stat).zfill(3) + '.png'
+    #fname_pic = 'Data_to_process/' + dir_name + '/Pictures/Picture' + str(num_stat).zfill(3) + '.png'
+    fname_pic = 'Data_to_process/' + dir_name + '/Pictures/Picture' + str(num_stat).zfill(3) + '.svg'
     appr_curve(x_value, y_value, x_value, app_func(x_value, C, alpha), fname=fname_pic)
 
     des = Design(name=info['design'])
     d_th = des.d[1:]
-    delta = 100 * np.linalg.norm(errors_rms / d_th) / np.sqrt(N)
+    #delta = 100 * np.linalg.norm(errors_rms / d_th) / np.sqrt(N)
+    #absolute errors? not relative
+    delta = np.linalg.norm(errors_rms) / np.sqrt(N)
 
     fname_c = 'Data_to_process/' + dir_name + '/c_values/c_value' + str(num_stat).zfill(3) + '.json'
     with open(fname_c, 'r') as file:
