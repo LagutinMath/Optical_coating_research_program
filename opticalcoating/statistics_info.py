@@ -5,6 +5,7 @@ from matplotlib import rc
 from opticalcoating.save_data import find_file_name
 import numpy as np
 import seaborn as sns
+from datetime import datetime
 
 
 class StatInfo:
@@ -14,12 +15,20 @@ class StatInfo:
         self.des = des_th
         self.set_up_pars = set_up_pars
         self.term_algs = term_algs
+        self.creation_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         self.N_sim = len(err_list)
 
     def make_dict(self):
-        stat_dict = {'design': self.des.name, 'start_rnd_seed': self.start_rnd_seed, 'error list': self.err_list,
-                     'term_algs': self.term_algs}
+        stat_dict = {'design': self.des.name,
+                     'creation_time': self.creation_time,
+                     'start_rnd_seed': self.start_rnd_seed,
+                     'waves': [wave.wavelength for wave in self.set_up_pars.waves[1:]],
+                     'term_algs': self.term_algs[1:],
+                     'rates': self.set_up_pars.rates[1:],
+                     'rates_sigmas': self.set_up_pars.rates_sigmas[1:],
+                     'meas_sigmas': self.set_up_pars.meas_sigmas[1:],
+                     'error list': self.err_list}
         return stat_dict
 
     def save(self):

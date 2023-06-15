@@ -199,7 +199,7 @@ class Design:
                             layer=layer, save_M=save_M)
 
 
-    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False, lang='eng'):
+    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False, lang='eng', title=''):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
         ax = fig.add_subplot()
         x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
@@ -213,7 +213,7 @@ class Design:
         else:
             plt.xlabel('Wavelength, nm')
         plt.ylabel(q_TR + ', %')
-        # plt.title('Design physical d')
+        plt.title(title)
         if show:
             plt.show()
         else:
