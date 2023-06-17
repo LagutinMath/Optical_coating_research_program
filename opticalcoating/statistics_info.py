@@ -103,7 +103,7 @@ def error_norm_hist(num, *, show=False, xmax=None):
         plt.savefig(find_file_name('Picture', '.png'))
 
 
-def error_rms_bar(num, *, show=False, ymax=None):
+def error_rms_bar(num, *, show=False, ymax=None, colored=True, special_layers=None):
     info = load_dict(num)
     errors = pd.DataFrame(info['error list'])
     M, N = errors.shape
@@ -113,8 +113,17 @@ def error_rms_bar(num, *, show=False, ymax=None):
                        'family': 'Times New Roman'}
     rc('font', **font_properties)
 
-    plt.figure(figsize=(16, 9))
-    plt.bar(x=range(1, N + 1), height=errors_rms)
+    fig = plt.figure(figsize=(16, 9))
+    if colored:
+        ax = fig.add_subplot()
+        ax.bar(range(1, N + 1, 2), errors_rms[0:N:2], color='b')
+        ax.bar(range(2, N + 1, 2), errors_rms[1:N:2], color='r')
+        if special_layers is not None:
+            sp_errors = [errors_rms[i - 1] for i in special_layers]
+            ax.bar(special_layers, sp_errors, color='m')
+    else:
+        plt.bar(x=range(1, N + 1), height=errors_rms)
+
     plt.xlim(1 - 0.5, N + 0.5)
     if ymax is None:
         ymax = max(errors_rms)
