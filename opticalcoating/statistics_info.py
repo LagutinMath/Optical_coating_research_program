@@ -90,9 +90,11 @@ def error_norm_hist(num, *, show=False, xmax=None):
     rc('font', **font_properties)
 
     plt.figure(figsize=(16, 9))
-    sns.histplot(data=errors_norm, bins=40)
     if xmax is None:
+        sns.histplot(data=errors_norm, bins=40)
         xmax = errors_norm.max()
+    else:
+        sns.histplot(data=errors_norm, binwidth=1.05 * xmax / 40)
     plt.xlim(0., 1.05 * xmax)
     plt.xlabel('Значение нормы вектора ошибок')
     plt.ylabel('Число симуляций')

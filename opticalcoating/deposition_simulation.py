@@ -457,6 +457,7 @@ class MonochromStrategyInfo:
         self.ampl = (des_th.N + 1) * [0.0]
         self.prev_extr = (des_th.N + 1) * [0.0]
         self.q_prev_extr = (des_th.N + 1) * [0.0]
+        self.num_tp = (des_th.N + 1) * [0.0]
 
         self.nonloc_coef = (des_th.N + 1) * [[]]
 
@@ -514,6 +515,7 @@ class MonochromStrategyInfo:
                 self.term[j_cur] = 1. + 1. / (abg.alpha() * math.cos(2. * phi) + abg.beta() * math.sin(2. * phi) + abg.gamma())
                 if set_up_pars.backside:
                     self.term[j_cur] = R_full(R_1, self.term[j_cur], d_s, xi, wv)
+            self.num_tp[j_cur] = num_cutoffs(abg.theta(), phi)
 
             self.prev_extr[j_cur] = abg.prev_extr(phi, set_up_pars.q_TR[j_cur])
             if set_up_pars.backside:

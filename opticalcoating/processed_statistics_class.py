@@ -96,9 +96,11 @@ class ProcessedStatistics:
         lolik = pd.Series(self.c_array)
 
         plt.figure(figsize=(16, 9))
-        sns.histplot(data=lolik, bins=40)
         if xmax is None:
+            sns.histplot(data=lolik, bins=40)
             xmax = lolik.max()
+        else:
+            sns.histplot(data=lolik, binwidth=1.05 * xmax / 40)
         plt.xlim(0., 1.05 * xmax)
         plt.xlabel('Значение c')
         plt.ylabel('Число симуляций')
