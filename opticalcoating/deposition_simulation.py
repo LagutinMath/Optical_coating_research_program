@@ -544,6 +544,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
     flux_meas = [[0.0] for _ in range(des_th.N + 1)]
     flux_act = [[0.0] for _ in range(des_th.N + 1)]
 
+    nonloccoef = {}
+
     # Информация о дизайне в текущий для симуляции момент времени
     des_act = copy.deepcopy(des_th)
     # des_act.d = np.zeros(des_th.N + 1, dtype=float)
@@ -597,6 +599,12 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
                                                  backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M))
             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
             nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
+
+            nonloccoef.setdefault(j, [])
+            nonloccoef[j].append({'dt': dt,
+                                  'D': nonloc_alg.coef.D(),
+                                  'theta': nonloc_alg.coef.theta(),
+                                  'gamma': nonloc_alg.coef.gamma()})
 
             if (not nonloc_alg.exist_coef) or (des_act.d[j] < 0.7 * des_th.d[j]):
                 continue
@@ -667,7 +675,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
 
     wavelength = [set_up_pars.waves[j].wavelength for j in range(1, des_th.N + 1)]
     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength,
-                   rnd_seed=rnd_seed, d_j_act_t=d_j_act_t, set_up_pars=set_up_pars, des=des_th)
+                   rnd_seed=rnd_seed, d_j_act_t=d_j_act_t, set_up_pars=set_up_pars, des=des_th, nonloccoef=nonloccoef)
 
 
 # def measurement_simulation(sim_info: SimInfo, waves):

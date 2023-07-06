@@ -4,7 +4,7 @@ import json
 
 class SimInfo:
     def __init__(self, des_th_d, des_act_d, time_list_res, flux_meas_res, term_cond_case, wavelength,
-                 rnd_seed=None, d_j_act_t=None, set_up_pars=None, des=None):
+                 rnd_seed=None, d_j_act_t=None, set_up_pars=None, des=None, nonloccoef=None):
         self.N_layers = len(des_th_d) - 1
         self.rnd_seed = rnd_seed
         self.d_th = des_th_d
@@ -18,6 +18,7 @@ class SimInfo:
         # Сложные класс, которые в json не записываем
         self.set_up_pars = set_up_pars
         self.des = des
+        self.nonloccoef = nonloccoef
 
     def d_act_t(self, j, i):
         if self.d_j_act_t is not None:
