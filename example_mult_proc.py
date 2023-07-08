@@ -10,7 +10,7 @@ from opticalcoating.design_class import Design
 from opticalcoating.calc_flux import Wave
 from opticalcoating.statistics_info import StatInfo, mean_error_norm, error_norm_hist, error_rms_bar
 
-from opticalcoating.processed_statistics_class import ProcessedStatistics
+from opticalcoating.c_values import ProcessedStatistics
 
 
 def simulation_mult(kwarg):

@@ -1,7 +1,31 @@
 import plotly.graph_objects as go
 import pandas as pd
+import seaborn as sns
 import json
+from matplotlib import rc
+import matplotlib.pyplot as plt
 
+rc('font', size=22, family='Times New Roman')
+
+def c_hist(stat, *, xmax=None, lang='en'):
+    data = pd.Series(stat.c_array)
+
+    if xmax is None: xmax = data.max()
+    else: data = data[data < xmax]
+    xmin = min(data)
+
+    plt.figure(figsize=(16, 9))
+    sns.histplot(data=data, bins=40)
+
+    plt.xlim(0 if xmin > 0 else 1.05 * xmin, 1.05 * xmax)
+
+    labels = {'ru': {'x': 'Значение c',
+                     'y': 'Число симуляций'},
+              'en': {'x': 'c',
+                     'y': 'Amount of simulations'}}
+
+    plt.xlabel(labels[lang]['x'])
+    plt.ylabel(labels[lang]['y'])
 
 def thickness_error_box_plot(*, num, title='', y_range=None, special_layers=[]):
     """Box Plot visualisation of thickness errors
