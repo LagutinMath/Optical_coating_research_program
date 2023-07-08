@@ -3,25 +3,8 @@
 __pycache__/
 # Папки ниже предполагается, что
 # являются индивидуальными для каждого исследователя
-Statistics/*
-Simulations/*
-Pictures/*
-c_values/*
-Designs/*
-Data/*
-Data_to_process/*
-Projects/*
-Spectral_values/*
-# Папка для неактуальных скриптов
-log/
-# Названия для рабочих скриптов
-test*
-TEST*
-lolik*
-descr*
-research*
-rs_*
-study*
+research_scripts/*
+resources/*
 # Индивидуальные файлы разработчика lagutina-alena
 main.py
 lagutina_main.py
