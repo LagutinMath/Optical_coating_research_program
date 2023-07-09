@@ -2,11 +2,12 @@ from scipy.interpolate import interp1d
 import numpy as np
 import json
 import os.path
-import copy
 import opticalcoating.calc_flux as cf
 from opticalcoating.calc_flux import Wave
 from math import inf
 from opticalcoating.save_data import find_file_name
+from importlib.resources import files
+
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -30,11 +31,11 @@ class Design:
             raise NameError('Wrong initialisation Design.')
 
         if init_1:
-            fname = 'Designs/' + name + '.json'
+            fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
             with open(fname, 'r') as file:
                 self.info = json.load(file)
             self.name = self.info['name']
-            self.d = self.info["thicknesses"]
+            self.d = self.info['thicknesses']
             if 'n_const' in self.info:
                 self.q_n_const = True
                 self.n_const = self.info['n_const']
@@ -47,7 +48,7 @@ class Design:
         elif init_3:
             self.info = info
             self.name = info['name']
-            self.d = self.info["thicknesses"]
+            self.d = self.info['thicknesses']
             if 'n_const' in self.info:
                 self.q_n_const = True
                 self.n_const = self.info['n_const']
@@ -97,7 +98,7 @@ class Design:
 
     def create_simple_json(self, *, name):
         # подразумевается, что есть только имя и вектора d и n
-        fname = 'Designs/' + name + '.json'
+        fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
                 inf = json.dumps({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=4)
@@ -105,8 +106,7 @@ class Design:
 
 
     def create_json(self):
-        fname = 'Designs/' + self.name + '.json'
-        print(fname)
+        fname = files('opticalcoating.resources.Designs').joinpath(f'{self.name}.json')
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
                 inf = json.dumps(self.info, indent=4)
@@ -171,7 +171,7 @@ class Design:
                 return [layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]]
 
 
-    def thickness_plot(self, show=False, lang='eng'):
+    def thickness_plot(self, lang='en'):
         # Сделать картинку во весь экран для 27 дюймового монитора
         # diag = math.sqrt(16**2 + 9**2)
         # ipseg = 27/diag  # inches per segment
@@ -188,10 +188,6 @@ class Design:
             plt.xlabel('Layer number')
             plt.ylabel('Physical thickness d, nm')
         # plt.title('Design physical d')
-        if show:
-            plt.show()
-        else:
-            plt.savefig(find_file_name('Picture', '.png'))
 
 
     def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
@@ -199,7 +195,7 @@ class Design:
                             layer=layer, save_M=save_M)
 
 
-    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, show=False, lang='eng', title=''):
+    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, lang='en', title=''):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
         ax = fig.add_subplot()
         x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
@@ -214,10 +210,6 @@ class Design:
             plt.xlabel('Wavelength, nm')
         plt.ylabel(q_TR + ', %')
         plt.title(title)
-        if show:
-            plt.show()
-        else:
-            plt.savefig(find_file_name('Picture', '.png'))
 
 
 def Sellmeier_n(coef_A, wvlen):

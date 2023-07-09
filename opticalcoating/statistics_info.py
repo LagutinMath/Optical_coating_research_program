@@ -6,6 +6,7 @@ from opticalcoating.save_data import find_file_name
 import numpy as np
 import seaborn as sns
 from datetime import datetime
+from importlib.resources import files
 
 
 class StatInfo:
@@ -65,7 +66,7 @@ class StatInfo:
 
 def load_dict(num):
     """Загружает данные проведенных симуляций как словарь"""
-    fname = 'Statistics/Statistic' + str(num).zfill(3) + '.json'
+    fname = files(f'opticalcoating.resources.Statistics').joinpath(f'Statistic{str(num).zfill(3)}.json')
     with open(fname, 'r') as file:
         return json.load(file)
 
@@ -79,7 +80,7 @@ def mean_error_norm(num):
     return errors_norm.mean()
 
 
-def error_norm_hist(num, *, show=False, xmax=None):
+def error_norm_hist(num, *, xmax=None):
     info = load_dict(num)
     errors = pd.DataFrame(info['error list'])
     M, N = errors.shape
@@ -99,13 +100,8 @@ def error_norm_hist(num, *, show=False, xmax=None):
     plt.xlabel('Значение нормы вектора ошибок')
     plt.ylabel('Число симуляций')
 
-    if show:
-        plt.show()
-    else:
-        plt.savefig(find_file_name('Picture', '.png'))
 
-
-def error_rms_bar(num, *, show=False, ymax=None, colored=True, special_layers=None):
+def error_rms_bar(num, *, ymax=None, colored=True, special_layers=None):
     info = load_dict(num)
     errors = pd.DataFrame(info['error list'])
     M, N = errors.shape
@@ -133,8 +129,4 @@ def error_rms_bar(num, *, show=False, ymax=None, colored=True, special_layers=No
     plt.xlabel('Номер слоя')
     plt.ylabel('Среднеквадратичная ошибка на слое, нм')
 
-    if show:
-        plt.show()
-    else:
-        plt.savefig(find_file_name('Picture', '.png'))
 

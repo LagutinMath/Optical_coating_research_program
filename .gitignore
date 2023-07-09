@@ -4,7 +4,12 @@ __pycache__/
 # Папки ниже предполагается, что
 # являются индивидуальными для каждого исследователя
 research_scripts/*
-resources/*
+opticalcoating/resources/c_values/*
+opticalcoating/resources/Deposition_measurements/*
+opticalcoating/resources/Designs/*
+opticalcoating/resources/Simulations/*
+opticalcoating/resources/Spectral_values/*
+opticalcoating/resources/Statistics/*
 # Индивидуальные файлы разработчика lagutina-alena
 main.py
 lagutina_main.py

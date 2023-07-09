@@ -5,7 +5,7 @@ from opticalcoating.save_data import find_file_name
 from opticalcoating.calc_flux import Wave
 
 
-def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, control_wv=1000, show=False, lang='eng'):
+def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, control_wv=1000, lang='en'):
     term_algs = (des.N + 1) * ['Elimination']
     # стратегия waves q_TR, backside, (?) witness_layers
     set_up_pars = SetUpParameters(N=des.N, waves=waves, q_TR=q_TR, backside=backside)
@@ -46,8 +46,3 @@ def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, 
     else:
         plt.xlabel('Optical thickness, nm')
     plt.ylabel(q_TR + ', %')
-
-    if show:
-        plt.show()
-    else:
-        plt.savefig(find_file_name('Picture', '.png'))

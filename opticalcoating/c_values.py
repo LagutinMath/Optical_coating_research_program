@@ -2,6 +2,7 @@ import json
 import numpy as np
 from opticalcoating.calc_flux import calc_flux
 from copy import deepcopy
+from importlib.resources import files
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
@@ -27,7 +28,9 @@ class ProcessedStatistics:
             self.statistic_num = statistic_num
             self.MF_d_th = merit(des, target)
 
-            with open('Statistics/Statistic' + str(statistic_num).zfill(3) + '.json', 'r') as file:
+            fname = files('opticalcoating.resources.Statistics').joinpath(
+                f'Statistic{str(statistic_num).zfill(3)}.json')
+            with open(fname, 'r') as file:
                 errors = np.array(json.load(file)['error list'])
                 if M is None or M > len(errors): M = len(errors)
                 errors = errors[:M]
@@ -43,8 +46,9 @@ class ProcessedStatistics:
             self.c_array = delta_MF / self.mean_delta_MF_rnd
             self.c_value = np.mean(self.c_array)
         elif init2:
-            file_name = 'c_values/c_value' + str(statistic_num).zfill(3) + '.json'
-            with open(file_name, 'r') as file:
+            fname = files('opticalcoating.resources.c_values').joinpath(
+                f'c_value{str(statistic_num).zfill(3)}.json')
+            with open(fname, 'r') as file:
                 info = json.load(file)
 
             self.statistic_num = statistic_num
@@ -63,7 +67,8 @@ class ProcessedStatistics:
                 'mean_delta_MF_rnd': self.mean_delta_MF_rnd,
                 'c_array': self.c_array.tolist()}
 
-        file_name = 'c_values/c_value' + str(self.statistic_num).zfill(3) + '.json'
-        with open(file_name, 'w') as file:
+        fname = files('opticalcoating.resources.c_values').joinpath(
+            f'c_value{str(self.statistic_num).zfill(3)}.json')
+        with open(fname, 'w') as file:
             json.dump(info, file, indent=3)
-        print(f'"{file_name}" is successfully saved')
+        print(f'"c_value{str(self.statistic_num).zfill(3)}.json" is successfully saved')

@@ -6,7 +6,7 @@ from matplotlib import rc
 from opticalcoating.save_data import find_file_name
 
 
-def sigmas_plot(statistic_num, *, show=False, ymax=None):
+def sigmas_plot(statistic_num, *, ymax=None):
     font_properties = {'size': 22,
                        'family': 'Times New Roman'}
     rc('font', **font_properties)
@@ -24,9 +24,3 @@ def sigmas_plot(statistic_num, *, show=False, ymax=None):
     plt.ylim(0., 1.05 * ymax)
     plt.xlabel('Номер собственного вектора')
     plt.ylabel('Стандартное отклонение ошибки, нм')
-
-    if show:
-        plt.show()
-    else:
-        plt.savefig(find_file_name('Picture', '.png'))
-
