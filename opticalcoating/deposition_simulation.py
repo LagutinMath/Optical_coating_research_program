@@ -1,12 +1,9 @@
-import os.path
-import numpy as np
 import math
-from opticalcoating.design_class import *
-from opticalcoating.simulation_info import SimInfo
 import copy
-from matplotlib.animation import FuncAnimation
 from datetime import datetime
 from numpy import pi
+from .design_class import *
+from .simulation_info import SimInfo
 
 
 class SetUpParameters:

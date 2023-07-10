@@ -1,8 +1,9 @@
 import json
 import numpy as np
-from opticalcoating.calc_flux import calc_flux
 from copy import deepcopy
 from importlib.resources import files
+from .calc_flux import calc_flux
+from .statistics_info import StatInfo
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
@@ -20,45 +21,43 @@ def merit(des, target, error=None, MF_d_th=0.0):
 
 
 class ProcessedStatistics:
-    def __init__(self, *, des=None, target=None, statistic_num=None, M=None):
+    def __init__(self, info):
         """:param: M - число анализируемых симуляций"""
-        init1 = (des is not None and target is not None and statistic_num is not None)
-        init2 = (des is None and target is None and statistic_num is not None and M is None)
-        if init1:
-            self.statistic_num = statistic_num
-            self.MF_d_th = merit(des, target)
+        self.statistic_num = info['statistic_num']
+        self.c_value = info['c_value']
+        self.mean_delta_MF_rnd = info['mean_delta_MF_rnd']
+        self.c_array = np.array(info['c_array'])
 
-            fname = files('opticalcoating.resources.Statistics').joinpath(
-                f'Statistic{str(statistic_num).zfill(3)}.json')
-            with open(fname, 'r') as file:
-                errors = np.array(json.load(file)['error list'])
-                if M is None or M > len(errors): M = len(errors)
-                errors = errors[:M]
 
-            median_val = np.median(np.linalg.norm(errors, axis=1))
-            rnd_errors = np.random.normal(0., median_val / np.sqrt(des.N), size=(M, des.N))
-            delta_MF_rnd = np.vectorize(lambda x: merit(des, target, error=x, MF_d_th=self.MF_d_th),
-                                        signature='(n)->()')(rnd_errors)
-            self.mean_delta_MF_rnd = np.mean(delta_MF_rnd)
+    @classmethod
+    def calc(cls, statistic_num, des, target, M):
+        info = {}
+        info['statistic_num'] = statistic_num
+        info['MF_d_th'] = merit(des, target)
+        errors = np.array(StatInfo.load(statistic_num).error_list)
+        if M is None or M > len(errors): M = len(errors)
+        errors = errors[:M]
 
-            delta_MF = np.vectorize(lambda x: merit(des, target, error=x, MF_d_th=self.MF_d_th),
-                                    signature='(n)->()')(errors)
-            self.c_array = delta_MF / self.mean_delta_MF_rnd
-            self.c_value = np.mean(self.c_array)
-        elif init2:
-            fname = files('opticalcoating.resources.c_values').joinpath(
-                f'c_value{str(statistic_num).zfill(3)}.json')
-            with open(fname, 'r') as file:
-                info = json.load(file)
+        median_val = np.median(np.linalg.norm(errors, axis=1))
+        rnd_errors = np.random.normal(0., median_val / np.sqrt(des.N), size=(M, des.N))
+        delta_MF_rnd = np.vectorize(lambda x: merit(des, target, error=x, MF_d_th=info['MF_d_th']),
+                                    signature='(n)->()')(rnd_errors)
+        info['mean_delta_MF_rnd'] = np.mean(delta_MF_rnd)
 
-            self.statistic_num = statistic_num
-            self.c_value = info['c_value']
-            self.MF_d_th = info['MF_d_th']
-            self.mean_delta_MF_rnd = info['mean_delta_MF_rnd']
-            self.c_array = np.array(info['c_array'])
-            if M is not None: self.c_array = self.c_array[:M]
-        else:
-            raise NameError('Wrong Initialization')
+        delta_MF = np.vectorize(lambda x: merit(des, target, error=x, MF_d_th=info['MF_d_th']),
+                                signature='(n)->()')(errors)
+        info['c_array'] = delta_MF / info['mean_delta_MF_rnd']
+        info['c_value'] = np.mean(info['c_array'])
+        return cls(info)
+
+
+    @classmethod
+    def load(cls, statistic_num):
+        fname = files('opticalcoating.resources.c_values').joinpath(
+            f'c_value{str(statistic_num).zfill(3)}.json')
+        with open(fname, 'r') as file: info = json.load(file)
+        info['statistic_num'] = statistic_num
+        return cls(info)
 
 
     def save(self):

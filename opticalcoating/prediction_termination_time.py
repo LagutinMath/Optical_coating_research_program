@@ -1,5 +1,5 @@
 import copy
-from opticalcoating.deposition_simulation import MonochromStrategyInfo, DataNonloc
+from .deposition_simulation import MonochromStrategyInfo, DataNonloc
 
 class MonochromaticDeposition():
     def __init__(self, des_th, set_up_pars, t_scan):

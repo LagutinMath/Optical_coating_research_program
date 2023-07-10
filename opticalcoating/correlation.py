@@ -1,5 +1,5 @@
-# from opticalcoating.deposition_simulation import *
 import numpy as np
+
 
 def correlation(A):
     """Вычисление числа beta --- коэф.корреляции"""

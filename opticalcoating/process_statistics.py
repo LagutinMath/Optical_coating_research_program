@@ -1,19 +1,15 @@
-import numpy as np
-import pandas as pd
 from scipy.optimize import curve_fit
 
 # Отключает просмотр рисунков в ноутбуке
 import matplotlib
 matplotlib.use('Agg')
 
-import matplotlib.pyplot as plt
-from matplotlib import rc
 from matplotlib.ticker import MaxNLocator
 
-from opticalcoating.design_class import Design
-from opticalcoating.statistics_info import *
-from opticalcoating.simulation_info import *
-from opticalcoating.correlation_plots import *
+from .design_class import Design
+from .statistics_info import *
+from .simulation_info import *
+from .correlation_plots import *
 
 from pathlib import Path
 from os import listdir

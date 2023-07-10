@@ -1,8 +1,7 @@
-from opticalcoating.deposition_simulation import simulation, SetUpParameters
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from opticalcoating.save_data import find_file_name
-from opticalcoating.calc_flux import Wave
+from .calc_flux import Wave
+from .deposition_simulation import simulation, SetUpParameters
 
 
 def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, control_wv=1000, lang='en'):

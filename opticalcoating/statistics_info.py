@@ -2,11 +2,11 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from opticalcoating.save_data import find_file_name
 import numpy as np
 import seaborn as sns
 from datetime import datetime
 from importlib.resources import files
+from .save_data import find_file_name
 
 
 class StatInfo:
@@ -41,8 +41,7 @@ class StatInfo:
         """Загружает данные проведенных симуляций как словарь"""
         fname = files(f'opticalcoating.resources.Statistics').joinpath(
             f'Statistic{str(statistic_num).zfill(3)}.json')
-        with open(fname, 'r') as file:
-            stat_dict = json.load(file)
+        with open(fname, 'r') as file: stat_dict = json.load(file)
         return cls(stat_dict)
 
 

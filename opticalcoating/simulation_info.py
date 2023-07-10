@@ -1,5 +1,5 @@
-from opticalcoating.save_data import find_file_name
 import json
+from .save_data import find_file_name
 
 
 class SimInfo:

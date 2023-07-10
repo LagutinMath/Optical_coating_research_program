@@ -2,11 +2,10 @@ from scipy.interpolate import interp1d
 import numpy as np
 import json
 import os.path
-import opticalcoating.calc_flux as cf
-from opticalcoating.calc_flux import Wave
 from math import inf
-from opticalcoating.save_data import find_file_name
 from importlib.resources import files
+import opticalcoating.calc_flux as cf
+from .calc_flux import Wave
 
 
 import matplotlib.pyplot as plt

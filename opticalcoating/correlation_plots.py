@@ -1,9 +1,8 @@
-from opticalcoating.correlation import std_values
 import pandas as pd
 import matplotlib.pyplot as plt
-from opticalcoating.statistics_info import StatInfo
 from matplotlib import rc
-from opticalcoating.save_data import find_file_name
+from .statistics_info import StatInfo
+from .correlation import std_values
 
 
 def sigmas_plot(statistic_num, *, ymax=None):
