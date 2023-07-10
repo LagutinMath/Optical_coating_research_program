@@ -23,7 +23,7 @@ class StatInfo:
 
 
     @classmethod
-    def legacy(cls, des_th, term_algs, set_up_pars, err_list, start_rnd_seed):
+    def legacy(cls, des_th, term_algs, set_up_pars, error_list, start_rnd_seed):
         stat_dict = {'design': des_th.name,
                      'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                      'start_rnd_seed': start_rnd_seed,
@@ -32,7 +32,7 @@ class StatInfo:
                      'rates': set_up_pars.rates[1:],
                      'rates_sigmas': set_up_pars.rates_sigmas[1:],
                      'meas_sigmas': set_up_pars.meas_sigmas[1:],
-                     'error list': err_list}
+                     'error list': error_list}
         return cls(stat_dict)
 
 
@@ -55,7 +55,7 @@ class StatInfo:
                      'rates': self.rates[1:],
                      'rates_sigmas': self.rates_sigmas[1:],
                      'meas_sigmas': self.meas_sigmas[1:],
-                     'error list': self.err_list}
+                     'error list': self.error_list}
         return stat_dict
 
 
@@ -69,26 +69,26 @@ class StatInfo:
     def save_plain_txt(self):
         file_name = find_file_name('Statistic', ext='.txt')
 
-        n = len(self.err_list)
-        m = len(self.err_list[0])
+        n = len(self.error_list)
+        m = len(self.error_list[0])
 
         with open(file_name, 'w') as file:
             for i in range(n):
                 for j in range(m):
-                    print(self.err_list[i][j], end='\t', file=file)
+                    print(self.error_list[i][j], end='\t', file=file)
                 print('', file=file)
             file.close()
 
 
     def mean_error_norm(self):
-        errors = pd.DataFrame(self.err_list)
+        errors = pd.DataFrame(self.error_list)
         M, N = errors.shape
         errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
         return errors_norm.mean()
 
 
     def error_rms(self):
-        errors = pd.DataFrame(self.err_list)
+        errors = pd.DataFrame(self.error_list)
         M, N = errors.shape
         errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j]) / np.sqrt(M) for j in range(N)])
         return errors_rms
