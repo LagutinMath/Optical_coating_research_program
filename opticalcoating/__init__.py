@@ -17,6 +17,3 @@ from .correlation_plots import sigmas_plot
 from .monitoring_curve_plot import monitoring_curve_plot
 from .statistics_info import error_norm_hist, error_rms_bar
 from .visualisation import thickness_error_box_plot, thickness_error_violin_plot, c_hist
-
-# импорт вспомогательных функций
-from .statistics_info import load_dict

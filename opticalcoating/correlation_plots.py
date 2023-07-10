@@ -1,7 +1,7 @@
 from opticalcoating.correlation import std_values
 import pandas as pd
 import matplotlib.pyplot as plt
-from opticalcoating.statistics_info import load_dict
+from opticalcoating.statistics_info import StatInfo
 from matplotlib import rc
 from opticalcoating.save_data import find_file_name
 
@@ -11,7 +11,7 @@ def sigmas_plot(statistic_num, *, ymax=None):
                        'family': 'Times New Roman'}
     rc('font', **font_properties)
 
-    error_list = load_dict(statistic_num)
+    error_list = StatInfo.load(statistic_num)
     lolik = pd.DataFrame(error_list['error list'])
 
     stds = std_values(lolik)

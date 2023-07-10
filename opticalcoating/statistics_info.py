@@ -10,34 +10,61 @@ from importlib.resources import files
 
 
 class StatInfo:
-    def __init__(self, des_th, term_algs, set_up_pars, err_list, start_rnd_seed):
-        self.err_list = err_list
-        self.start_rnd_seed = start_rnd_seed
-        self.des = des_th
-        self.set_up_pars = set_up_pars
-        self.term_algs = term_algs
-        self.creation_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    def __init__(self, stat_dict):
+        self.des_name = stat_dict['design']
+        self.creation_time = stat_dict['creation_time']
+        self.start_rnd_seed = stat_dict['start_rnd_seed']
+        self.waves = stat_dict['waves']
+        self.term_algs = [None] + stat_dict['term_algs']
+        self.rates = [None] + stat_dict['rates']
+        self.rates_sigmas = [None] + stat_dict['rates_sigmas']
+        self.meas_sigmas = [None] + stat_dict['meas_sigmas']
+        self.error_list = stat_dict['error list']
 
-        self.N_sim = len(err_list)
+
+    @classmethod
+    def legacy(cls, des_th, term_algs, set_up_pars, err_list, start_rnd_seed):
+        stat_dict = {'design': des_th.name,
+                     'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                     'start_rnd_seed': start_rnd_seed,
+                     'waves': [wave.wavelength for wave in set_up_pars.waves[1:]],
+                     'term_algs': term_algs[1:],
+                     'rates': set_up_pars.rates[1:],
+                     'rates_sigmas': set_up_pars.rates_sigmas[1:],
+                     'meas_sigmas': set_up_pars.meas_sigmas[1:],
+                     'error list': err_list}
+        return cls(stat_dict)
+
+
+    @classmethod
+    def load(cls, statistic_num):
+        """Загружает данные проведенных симуляций как словарь"""
+        fname = files(f'opticalcoating.resources.Statistics').joinpath(
+            f'Statistic{str(statistic_num).zfill(3)}.json')
+        with open(fname, 'r') as file:
+            stat_dict = json.load(file)
+        return cls(stat_dict)
+
 
     def make_dict(self):
-        stat_dict = {'design': self.des.name,
+        stat_dict = {'design': self.des_name,
                      'creation_time': self.creation_time,
                      'start_rnd_seed': self.start_rnd_seed,
-                     'waves': [wave.wavelength for wave in self.set_up_pars.waves[1:]],
+                     'waves': self.waves,
                      'term_algs': self.term_algs[1:],
-                     'rates': self.set_up_pars.rates[1:],
-                     'rates_sigmas': self.set_up_pars.rates_sigmas[1:],
-                     'meas_sigmas': self.set_up_pars.meas_sigmas[1:],
+                     'rates': self.rates[1:],
+                     'rates_sigmas': self.rates_sigmas[1:],
+                     'meas_sigmas': self.meas_sigmas[1:],
                      'error list': self.err_list}
         return stat_dict
 
+
     def save(self):
         file_name = find_file_name('Statistic')
-
         with open(file_name, 'w') as file:
             json.dump(self.make_dict(), file, indent=3)
             file.close()
+
 
     def save_plain_txt(self):
         file_name = find_file_name('Statistic', ext='.txt')
@@ -52,11 +79,13 @@ class StatInfo:
                 print('', file=file)
             file.close()
 
+
     def mean_error_norm(self):
         errors = pd.DataFrame(self.err_list)
         M, N = errors.shape
         errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
         return errors_norm.mean()
+
 
     def error_rms(self):
         errors = pd.DataFrame(self.err_list)
@@ -64,25 +93,16 @@ class StatInfo:
         errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j]) / np.sqrt(M) for j in range(N)])
         return errors_rms
 
-def load_dict(num):
-    """Загружает данные проведенных симуляций как словарь"""
-    fname = files(f'opticalcoating.resources.Statistics').joinpath(f'Statistic{str(num).zfill(3)}.json')
-    with open(fname, 'r') as file:
-        return json.load(file)
-
 
 def mean_error_norm(num):
-    info = load_dict(num)
-    errors = pd.DataFrame(info['error list'])
+    errors = pd.DataFrame(StatInfo.load(num).error_list)
     M, N = errors.shape
     errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
-
     return errors_norm.mean()
 
 
 def error_norm_hist(num, *, xmax=None):
-    info = load_dict(num)
-    errors = pd.DataFrame(info['error list'])
+    errors = pd.DataFrame(StatInfo.load(num).error_list)
     M, N = errors.shape
     errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
 
@@ -102,8 +122,7 @@ def error_norm_hist(num, *, xmax=None):
 
 
 def error_rms_bar(num, *, ymax=None, colored=True, special_layers=None):
-    info = load_dict(num)
-    errors = pd.DataFrame(info['error list'])
+    errors = pd.DataFrame(StatInfo.load(num).error_list)
     M, N = errors.shape
     errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j])/np.sqrt(M) for j in range(N)])
 
