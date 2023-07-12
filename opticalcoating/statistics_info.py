@@ -7,6 +7,7 @@ import seaborn as sns
 from datetime import datetime
 from importlib.resources import files
 from .save_data import find_file_name
+import opticalcoating.visualisation as vis
 
 
 class StatInfo:
@@ -92,6 +93,11 @@ class StatInfo:
         errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j]) / np.sqrt(M) for j in range(N)])
         return errors_rms
 
+    # Visualisation
+    def rms_bar(self, ymax=None, lang='en', pic_ext=None, **kwargs):
+        vis.rms_bar(self, ymax, lang, pic_ext, **kwargs)
+
+
 
 def mean_error_norm(num):
     errors = pd.DataFrame(StatInfo.load(num).error_list)
@@ -120,31 +126,6 @@ def error_norm_hist(num, *, xmax=None):
     plt.ylabel('Число симуляций')
 
 
-def error_rms_bar(num, *, ymax=None, colored=True, special_layers=None):
-    errors = pd.DataFrame(StatInfo.load(num).error_list)
-    M, N = errors.shape
-    errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j])/np.sqrt(M) for j in range(N)])
 
-    font_properties = {'size': 22,
-                       'family': 'Times New Roman'}
-    rc('font', **font_properties)
-
-    fig = plt.figure(figsize=(16, 9))
-    if colored:
-        ax = fig.add_subplot()
-        ax.bar(range(1, N + 1, 2), errors_rms[0:N:2], color='b')
-        ax.bar(range(2, N + 1, 2), errors_rms[1:N:2], color='r')
-        if special_layers is not None:
-            sp_errors = [errors_rms[i - 1] for i in special_layers]
-            ax.bar(special_layers, sp_errors, color='m')
-    else:
-        plt.bar(x=range(1, N + 1), height=errors_rms)
-
-    plt.xlim(1 - 0.5, N + 0.5)
-    if ymax is None:
-        ymax = max(errors_rms)
-    plt.ylim(0., 1.05 * ymax)
-    plt.xlabel('Номер слоя')
-    plt.ylabel('Среднеквадратичная ошибка на слое, нм')
 
 

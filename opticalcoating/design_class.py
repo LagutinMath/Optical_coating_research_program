@@ -5,15 +5,13 @@ import os.path
 from math import inf
 from importlib.resources import files
 import opticalcoating.calc_flux as cf
+import opticalcoating.visualisation as vis
 from .calc_flux import Wave
 
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
-font_properties = {'size': 22,
-                   'family': 'Times New Roman'}
-rc('font', **font_properties)
 
 
 class Design:
@@ -170,29 +168,13 @@ class Design:
                 return [layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]]
 
 
-    def thickness_plot(self, lang='en'):
-        # Сделать картинку во весь экран для 27 дюймового монитора
-        # diag = math.sqrt(16**2 + 9**2)
-        # ipseg = 27/diag  # inches per segment
-        # fig = plt.figure('Thicknesses', figsize=(16 * ipseg, 9 * ipseg))
-        fig = plt.figure('Thicknesses', figsize=(16, 9))
-        ax = fig.add_subplot()
-        ax.bar(range(1, self.N + 1, 2), self.d[1:self.N + 1:2], color='b')
-        ax.bar(range(2, self.N + 1, 2), self.d[2:self.N + 1:2], color='r')
-        plt.xlim([0.5, self.N + 0.5])
-        if lang == 'ru':
-            plt.xlabel('Номер слоя')
-            plt.ylabel('Физическая толщина d, нм')
-        else:
-            plt.xlabel('Layer number')
-            plt.ylabel('Physical thickness d, nm')
-        # plt.title('Design physical d')
-
-
     def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
         return cf.calc_flux(self, wv, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a, q_TR=q_TR,
                             layer=layer, save_M=save_M)
 
+    # Visualisation
+    def thickness_bar(self, lang='en', pic_ext=None, **kwargs):
+        vis.thickness_bar(self, lang, pic_ext, **kwargs)
 
     def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, lang='en', title=''):
         fig = plt.figure('Spectral plot', figsize=(16, 9))
