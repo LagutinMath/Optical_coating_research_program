@@ -1,9 +1,11 @@
 import plotly.graph_objects as go
 import pandas as pd
 import seaborn as sns
+import numpy as np
 import json
 from matplotlib import rc
 import matplotlib.pyplot as plt
+from .calc_flux import calc_flux, Wave
 
 
 rc('font', size=22, family='Times New Roman')
@@ -54,8 +56,74 @@ def rms_bar(stat, ymax=None, lang='en', pic_ext=None, **kwargs):
         meas_sigma = str(100 * max(stat.meas_sigmas[1:])).replace('.', '')
         kwargs['fname'] = f'rms_{stat.des_name}_{algs}_T{meas_sigma}_{wv}nm.{pic_ext}'
     bar(**kwargs)
-# --------------------------
 
+# --------------------------
+def plot(wv_range, values_list, labels=None, fname=None, **kwargs):
+    fig = plt.figure('Thicknesses', figsize=(16, 9))
+    ax = fig.add_subplot()
+
+    for y_values in values_list:
+        ax.plot(wv_range, y_values)
+
+    plt.xlim(wv_range[0], wv_range[-1])
+    if 'ylim' in kwargs: plt.ylim(kwargs['ylim'])
+    elif '%' in labels['y']: plt.ylim(0., 100.)
+
+    if labels is not None:
+        plt.xlabel(labels['x'])
+        plt.ylabel(labels['y'])
+    if fname is not None: plt.savefig(fname)
+
+
+def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic_ext=None, **kwargs):
+    labels = {'ru': {'x': 'Длина волны, нм',
+                     'y': f'{q_TR}, %'},
+              'en': {'x': 'Wavelength, nm',
+                     'y': f'{q_TR}, %'}}
+    kwargs['labels'] = labels[lang]
+
+    if wv_bnd is None: wv_bnd = (0.1, 10_000)
+    for des in designs:
+        left  = max(des.wv_bnd(j)[0] for j in range(des.N + 1))
+        left = 380 if left < 0.1 else left
+        right = min(des.wv_bnd(j)[1] for j in range(des.N + 1))
+        right = 760 if right > 10_000 else right
+        wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
+    kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
+    waves = list(map(Wave, kwargs['wv_range']))
+
+    for des in designs:
+        kwargs.setdefault('values_list', []).append(
+            np.vectorize(lambda x: calc_flux(des, x, q_subs=q_subs, q_percent=True, q_TR=q_TR))(waves))
+
+    if 'statistic_num' in kwargs and pic_ext:
+        kwargs['fname'] = f'comp_{"best" if kwargs["is_best"] else "worst"}_{kwargs["statistic_num"]}.{pic_ext}'
+    elif pic_ext: kwargs['fname'] = f'spectral_plot_{des.name}.{pic_ext}'
+    plot(**kwargs)
+
+
+def dispersion_plot(des, layer_num, wv_bnd=None, lang='en', pic_ext=None, **kwargs):
+    labels = {'ru': {'x': 'Длина волны, нм',
+                     'y': 'n'},
+              'en': {'x': 'Wavelength, nm',
+                     'y': 'n'}}
+    kwargs['labels'] = labels[lang]
+
+    if wv_bnd is None: wv_bnd = (0.1, 10_000)
+    left  = max(des.wv_bnd(j)[0] for j in range(des.N + 1))
+    left = 380 if left < 0.1 else left
+    right = min(des.wv_bnd(j)[1] for j in range(des.N + 1))
+    right = 760 if right > 10_000 else right
+    wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
+
+    kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
+    waves = list(map(Wave, kwargs['wv_range']))
+    kwargs['values_list'] = (np.vectorize(lambda x: des.n(layer_num, x))(waves),)
+    if pic_ext: kwargs['fname'] = f'dispersion_{des.name}_{des.info["layers"][layer_num]}.{pic_ext}'
+
+    plot(**kwargs)
+
+# --------------------------
 def c_hist(stat, *, xmax=None, lang='en'):
     data = pd.Series(stat.c_array)
 
@@ -75,6 +143,7 @@ def c_hist(stat, *, xmax=None, lang='en'):
 
     plt.xlabel(labels[lang]['x'])
     plt.ylabel(labels[lang]['y'])
+
 
 def thickness_error_box_plot(*, num, title='', y_range=None, special_layers=[]):
     """Box Plot visualisation of thickness errors

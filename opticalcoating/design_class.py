@@ -1,22 +1,16 @@
 from scipy.interpolate import interp1d
-import numpy as np
+
 import json
 import os.path
 from math import inf
 from importlib.resources import files
 import opticalcoating.calc_flux as cf
 import opticalcoating.visualisation as vis
-from .calc_flux import Wave
-
-
-import matplotlib.pyplot as plt
-from matplotlib import rc
-
+import numpy as np
 
 
 class Design:
     def __init__(self, *, name=None, d=None, n_const=None, info=None, witness_layers=None):
-
         # ПРОВЕРКА ПРАВИЛЬНОСТИ ИНИЦИАЛИЗАЦИИ
         # Инициализация по имени дизайна (имя файла)
         init_1 = (name is not None)
@@ -158,14 +152,14 @@ class Design:
     def wv_bnd(self, layer_num):
         # return min and max correct approximation values of wavelength for n and xi
         if self.q_n_const:
-            return [0., inf]
+            return 0., inf
         else:
             layer_material = self.info["mat_inf"][self.info["layers"][layer_num]]
             if "Sellmeier" in layer_material or "Cauchy" in layer_material:
-                return [0., inf]
+                return 0., inf
                 # There is not restrict in Sellmeier case (you cant use wv = sqrt(A[2]), sqrt(A[4]), sqrt(A[6]))
             else:
-                return [layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]]
+                return layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]
 
 
     def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
@@ -176,21 +170,13 @@ class Design:
     def thickness_bar(self, lang='en', pic_ext=None, **kwargs):
         vis.thickness_bar(self, lang, pic_ext, **kwargs)
 
-    def spectral_plot(self, *, q_TR='T', wv_range=[380, 760], N_pts=1000, q_subs=True, lang='en', title=''):
-        fig = plt.figure('Spectral plot', figsize=(16, 9))
-        ax = fig.add_subplot()
-        x_range = np.linspace(wv_range[0], wv_range[1], N_pts)
-        y_range = N_pts * [0.0]
-        for i in range(N_pts):
-            y_range[i] = self.calc_flux(Wave(x_range[i]), q_percent=True, q_TR=q_TR, q_subs=q_subs)
-        ax.plot(x_range, y_range)
-        plt.ylim([0, 100])
-        if lang == 'ru':
-            plt.xlabel('Длина волны, нм')
-        else:
-            plt.xlabel('Wavelength, nm')
-        plt.ylabel(q_TR + ', %')
-        plt.title(title)
+
+    def spectral_plot(self, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic_ext=None, **kwargs):
+        vis.spectral_plot((self,), q_TR=q_TR, wv_bnd=wv_bnd, q_subs=q_subs, lang=lang, pic_ext=pic_ext, **kwargs)
+
+
+    def dispersion_plot(self, layer_num, wv_bnd=None, lang='en', pic_ext=None, **kwargs):
+        vis.dispersion_plot(self, layer_num, wv_bnd=wv_bnd, lang=lang, pic_ext=pic_ext, **kwargs)
 
 
 def Sellmeier_n(coef_A, wvlen):
