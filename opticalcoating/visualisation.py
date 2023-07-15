@@ -11,8 +11,9 @@ from .calc_flux import calc_flux, Wave
 rc('font', size=22, family='Times New Roman')
 
 # --------------------------
-def bar(heights, labels=None, ymax=None, color=None, special_layers=(), fname=None):
-    fig = plt.figure('Thicknesses', figsize=(16, 9))
+def bar(heights, labels=None, ymax=None, color=None, special_layers=(), fname=None, **kwargs):
+    if 'figsize' not in kwargs: kwargs['figsize'] = (16, 9)
+    fig = plt.figure(figsize=kwargs['figsize'])
     ax = fig.add_subplot()
 
     N = len(heights)
@@ -36,7 +37,7 @@ def thickness_bar(des, lang='en', pic_ext=None, **kwargs):
                      'y': 'Физическая толщина, нм'},
               'en': {'x': 'Layer number',
                      'y': 'Thickness, nm'}}
-    kwargs['heights'] = des.d[1:des.N]
+    kwargs['heights'] = des.d[1:des.N + 1]
     kwargs['labels'] = labels[lang]
     if pic_ext: kwargs['fname'] = f'thicknesses_{des.name}.{pic_ext}'
     bar(**kwargs)
@@ -46,7 +47,7 @@ def rms_bar(stat, ymax=None, lang='en', pic_ext=None, **kwargs):
     labels = {'ru': {'x': 'Номер слоя',
                      'y': 'Среднеквадратичная ошибка на слое, нм'},
               'en': {'x': 'Layer number',
-                     'y': 'Root mean square, nm'}}
+                     'y': 'RMS error, nm'}}
     kwargs['heights'] = stat.error_rms()
     kwargs['labels'] = labels[lang]
     if ymax: kwargs['ymax'] = ymax
@@ -59,7 +60,8 @@ def rms_bar(stat, ymax=None, lang='en', pic_ext=None, **kwargs):
 
 # --------------------------
 def plot(wv_range, values_list, labels=None, fname=None, **kwargs):
-    fig = plt.figure('Thicknesses', figsize=(16, 9))
+    if 'figsize' not in kwargs: kwargs['figsize'] = (16, 9)
+    fig = plt.figure(figsize=kwargs['figsize'])
     ax = fig.add_subplot()
 
     for y_values in values_list:
