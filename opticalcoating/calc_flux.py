@@ -7,6 +7,18 @@ class Wave:
         self.angle = angle
 
 
+def gauss(flux_list):
+    """Численное пятиточечное интегрирование по формулам Гаусса-Кристоффеля с гауссовой весовой функцией"""
+    return (0.011257411327720682 * flux_list[0] + 0.22207592200561266 * flux_list[1] +
+            0.5333333333333333 * flux_list[2] +
+            0.22207592200561266 * flux_list[3] + 0.011257411327720682 * flux_list[4])
+
+
+def sigma(FHWM):
+    # FHWM = 2 Sqrt[2 Log[2]] * sigma
+    return 0.5887050112577373 * FHWM
+
+
 def sp_mat_mult(A, B):  # special matrix multiplication
     m00 = A[0][0] * B[0][0] - A[0][1] * B[1][0]
     m01 = A[0][0] * B[0][1] + A[0][1] * B[1][1]
@@ -15,7 +27,7 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
+def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False, width=None):
     if layer is not None:
         w_num = des.witness_num(layer)
     else:
@@ -93,6 +105,14 @@ def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q
         R = (R_1 + (sgm**2 * R_2 * T_1 * T_1) / (1.0 - R_1 * R_2 * sgm**2))
     else:
         T, R = T_1, R_1
+
+    if width is not None:
+        x_list = (-2.8569700138728056, -1.355626179974266, 0.0,
+               1.355626179974266, 2.8569700138728056)
+        wvs = [Wave(wv.wavelength + sigma(width) * x) for x in x_list]
+        flux_list = [calc_flux(des, wave, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a,
+                               q_TR=q_TR, layer=layer, save_M=save_M) for wave in wvs]
+        return gauss(flux_list)
 
     if q_TR == 'both':
         return (100.0 * T, 100.0 * R) if q_percent else (T, R)

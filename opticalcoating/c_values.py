@@ -27,10 +27,11 @@ class ProcessedStatistics:
         self.c_value = info['c_value']
         self.mean_delta_MF_rnd = info['mean_delta_MF_rnd']
         self.c_array = np.array(info['c_array'])
+        self.MF_d_th = info['MF_d_th']
 
 
     @classmethod
-    def calc(cls, statistic_num, des, target, M):
+    def calc(cls, statistic_num, des, target, M=None):
         info = {}
         info['statistic_num'] = statistic_num
         info['MF_d_th'] = merit(des, target)

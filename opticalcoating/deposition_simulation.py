@@ -4,6 +4,7 @@ from datetime import datetime
 from numpy import pi
 from .design_class import *
 from .simulation_info import SimInfo
+from .calc_flux import Wave
 
 
 class SetUpParameters:
@@ -16,7 +17,7 @@ class SetUpParameters:
 
     def __init__(self, *, N, waves=510, q_TR='R', tau=2., rates=0.5, mono_width=0., meas_sigmas=None, meas_syst=0.,
                  rates_sigmas=None, rates_syst=0., delay_time=0., delay_time_sigma=0., r_index_syst=None,
-                 r_index_sigmas=None, backside=False):
+                 r_index_sigmas=None, backside=False, width=None):
         self.N = N
 
         if isinstance(waves, (int, float)):
@@ -42,6 +43,7 @@ class SetUpParameters:
         self.delay_time_sigma = delay_time_sigma
         self.r_index_syst = autofill(r_index_syst, N=self.N)
         self.r_index_sigmas = autofill(r_index_sigmas, N=self.N)
+        self.width = width
         # N --- кол-во слоёв
         # в массивах индекс соответствует номеру слоя
         # индекс 0 незадействован для rates и пр.
@@ -522,6 +524,7 @@ class MonochromStrategyInfo:
                     self.prev_extr[j_cur] = R_full(R_1, self.prev_extr[j_cur], d_s, xi, wv)
             self.q_prev_extr[j_cur] = abg.q_prev_extr(phi, set_up_pars.q_TR[j_cur])
 
+
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_M=False):
     # save_M ускоряет счет (усл: без смены свидетелей, без смены длины волны)
     if rnd_seed is None:
@@ -572,7 +575,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
         # lsc = 0  # layer_step_counter
         time_list[j][0] = time_list[j - 1][-1]
         flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                           backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M)
+                                           backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M,
+                                           width=set_up_pars.width)
         flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
         nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -593,7 +597,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
             time_list[j].append(time_list[j][-1] + delta_t)
             d_j_act_t[j].append(des_act.d[j])
             flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                                 backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M))
+                                                 backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M,
+                                                 width=set_up_pars.width))
             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
             nonloc_alg.refresh(dt, flux_meas[j][-1], set_up_pars.q_TR[j])
 
@@ -644,7 +649,8 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
                     time_list[j].append(time_list[j][-1] + delta_t)
                     d_j_act_t[j].append(des_act.d[j])
                     flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-                                                         backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M))
+                                                         backside=set_up_pars.backside, q_subs=q_subs, save_M=save_M,
+                                                         width=set_up_pars.width))
                     flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
 
                 elif dt > t_term:

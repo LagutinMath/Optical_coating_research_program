@@ -162,9 +162,9 @@ class Design:
                 return layer_material["Table"]["wavelength"][0], layer_material["Table"]["wavelength"][-1]
 
 
-    def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False):
+    def calc_flux(self, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False, width=None):
         return cf.calc_flux(self, wv, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a, q_TR=q_TR,
-                            layer=layer, save_M=save_M)
+                            layer=layer, save_M=save_M, width=width)
 
     # Visualisation
     def thickness_bar(self, lang='en', pic_ext=None, **kwargs):
