@@ -63,7 +63,6 @@ class StatInfo:
         file_name = find_file_name('Statistic')
         with open(file_name, 'w') as file:
             json.dump(self.make_dict(), file, indent=3)
-            file.close()
 
 
     def save_plain_txt(self):
@@ -77,7 +76,6 @@ class StatInfo:
                 for j in range(m):
                     print(self.error_list[i][j], end='\t', file=file)
                 print('', file=file)
-            file.close()
 
 
     def mean_error_norm(self):

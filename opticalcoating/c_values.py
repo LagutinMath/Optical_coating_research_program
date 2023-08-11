@@ -4,6 +4,17 @@ from copy import deepcopy
 from importlib.resources import files
 from .calc_flux import calc_flux
 from .statistics_info import StatInfo
+from .calc_flux import Wave
+
+
+def get_target(name):
+    fname = files(f'opticalcoating.resources.Targets').joinpath(f'Target_{name}.json')
+    with open(fname, 'r', encoding='utf-8') as file:
+        dct = json.load(file)
+    wv = [Wave(x) for x in dct['wv_list']]
+    flux_target = dct['flux_target']
+    if 'dTa' in dct.keys(): return (wv, flux_target, dct['dTa'])
+    return (wv, flux_target)
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
