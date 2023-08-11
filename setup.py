@@ -6,3 +6,7 @@ for folder in folders:
     f = files('opticalcoating.resources').joinpath(folder)
     Path(f).mkdir(exist_ok=True)
     with open(f.joinpath('__init__.py'), 'w') as f: pass
+
+for folder in ('notebooks', 'python_scripts'):
+    f = f'research_scripts/{folder}'
+    Path(f).mkdir(exist_ok=True)
