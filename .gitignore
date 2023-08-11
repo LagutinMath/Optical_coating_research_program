@@ -5,6 +5,8 @@ __pycache__/
 # являются индивидуальными для каждого исследователя
 research_scripts/*
 opticalcoating/resources/*
+
+!opticalcoating/resources/*/__init__.py
 # Индивидуальные файлы разработчика lagutina-alena
 main.py
 lagutina_main.py
