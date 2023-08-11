@@ -7,6 +7,7 @@ research_scripts/*
 opticalcoating/resources/*
 
 !opticalcoating/resources/*/__init__.py
+!research_scripts/Example.ipynb
 # Индивидуальные файлы разработчика lagutina-alena
 main.py
 lagutina_main.py

@@ -92,7 +92,7 @@ class Design:
         fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
-                inf = json.dumps({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=4)
+                inf = json.dumps({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=3)
                 print(inf, file=file)
 
 
@@ -100,7 +100,7 @@ class Design:
         fname = files('opticalcoating.resources.Designs').joinpath(f'{self.name}.json')
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
-                inf = json.dumps(self.info, indent=4)
+                inf = json.dumps(self.info, indent=3)
                 print(inf, file=file)
 
 

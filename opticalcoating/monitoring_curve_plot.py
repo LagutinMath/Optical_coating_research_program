@@ -41,7 +41,7 @@ def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, 
     plt.xlim(min(X[0]), max(X[-1]))
     plt.ylim(0., 100.)
     if lang=='ru':
-        plt.xlabel(f'Оптическая толщина покрытия (контрольная длина волны = {control_wv} нм), нм')
+        plt.xlabel('Оптическая толщина покрытия, нм')
     else:
         plt.xlabel('Optical thickness, nm')
     plt.ylabel(q_TR + ', %')
