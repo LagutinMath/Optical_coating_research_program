@@ -4,17 +4,6 @@ from copy import deepcopy
 from importlib.resources import files
 from .calc_flux import calc_flux
 from .statistics_info import StatInfo
-from .calc_flux import Wave
-
-
-def get_target(name):
-    fname = files(f'opticalcoating.resources.Targets').joinpath(f'Target_{name}.json')
-    with open(fname, 'r', encoding='utf-8') as file:
-        dct = json.load(file)
-    wv = [Wave(x) for x in dct['wv_list']]
-    flux_target = dct['flux_target']
-    if 'dTa' in dct.keys(): return (wv, flux_target, dct['dTa'])
-    return (wv, flux_target)
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
@@ -22,9 +11,8 @@ def merit(des, target, error=None, MF_d_th=0.0):
         des = deepcopy(des)
         des.d = [des.d[0]] + [des.d[i] + error[i - 1] for i in range(1, des.N + 1)]
 
-    waves, T_target = np.array(target[0]), np.array(target[1])
-    dTa = np.array(target[2]) if len(target) > 2 else None
-    T_des = np.vectorize(lambda x: calc_flux(des, x, q_subs=False, q_percent=False, q_TR='T'))(waves)
+    waves, T_target, dTa = target.waves, target.flux_target, target.dTa
+    T_des = np.vectorize(lambda wave: calc_flux(des, wave, q_subs=False, q_percent=False, q_TR=target.q_TR))(waves)
 
     if dTa is None: delta_T = T_des - T_target
     else: delta_T = (T_des - T_target) / dTa

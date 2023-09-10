@@ -2,7 +2,8 @@
 from .calc_flux import Wave
 from .deposition_simulation import SetUpParameters
 from .design_class import Design
-from .c_values import ProcessedStatistics, get_target
+from .target import Target
+from .c_values import ProcessedStatistics
 from .simulation_info import SimInfo
 from .statistics_info import StatInfo
 
