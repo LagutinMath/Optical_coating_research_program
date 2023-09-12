@@ -9,7 +9,6 @@ from .statistics_info import StatInfo
 
 # импорт вычисляющих функций
 from .calc_flux import calc_flux, grad_flux
-from .correlation import correlation
 from .deposition_simulation import simulation
 from .statistics_info import mean_error_norm
 

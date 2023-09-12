@@ -2,7 +2,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from .statistics_info import StatInfo
-from .correlation import std_values
+import numpy as np
+
+
+def std_values(errors):
+    """Roots of eig values (standart deviations) of error matrix"""
+    # M - number of simulations, m - number of layers
+    M, m = errors.shape
+    mu = (1 / M) * errors.T @ errors
+    vals, _ = np.linalg.eig(mu)
+    return sorted(np.sqrt(vals), reverse=True)
 
 
 def sigmas_plot(statistic_num, *, ymax=None):

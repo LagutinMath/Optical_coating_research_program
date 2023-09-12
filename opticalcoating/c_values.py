@@ -27,6 +27,7 @@ class ProcessedStatistics:
         self.mean_delta_MF_rnd = info['mean_delta_MF_rnd']
         self.c_array = np.array(info['c_array'])
         self.MF_d_th = info['MF_d_th']
+        self.beta = info['beta']
 
 
     @classmethod
@@ -48,6 +49,8 @@ class ProcessedStatistics:
                                 signature='(n)->()')(errors)
         info['c_array'] = delta_MF / info['mean_delta_MF_rnd']
         info['c_value'] = np.mean(info['c_array'])
+
+        info['beta'] = cls.calc_beta(errors)
         return cls(info)
 
 
@@ -62,6 +65,7 @@ class ProcessedStatistics:
 
     def save(self):
         info = {'c_value': self.c_value,
+                'beta': self.beta,
                 'MF_d_th': self.MF_d_th,
                 'mean_delta_MF_rnd': self.mean_delta_MF_rnd,
                 'c_array': self.c_array.tolist()}
@@ -71,3 +75,13 @@ class ProcessedStatistics:
         with open(fname, 'w') as file:
             json.dump(info, file, indent=3)
         print(f'"c_value{str(self.statistic_num).zfill(3)}.json" is successfully saved')
+
+
+    @staticmethod
+    def calc_beta(errors):
+        """Вычисление числа beta --- коэф.корреляции"""
+        # M - number of simulations, m - number of layers
+        M, m = errors.shape
+        mu = (1 / M) * errors.T @ errors
+        vals, _ = np.linalg.eig(mu)
+        return np.prod(np.sqrt(vals.mean()) / np.sqrt(vals)) ** (1 / m)
