@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from scipy.optimize import curve_fit
 from copy import deepcopy
 from importlib.resources import files
 from .calc_flux import calc_flux
@@ -30,6 +31,7 @@ class ProcessedStatistics:
         self.c_array = np.array(info['c_array'])
         self.MF_d_th = info['MF_d_th']
         self.beta = info['beta']
+        self.exp_appr_coef = info['exp_appr_coef']
 
 
     @classmethod
@@ -56,6 +58,13 @@ class ProcessedStatistics:
         info['c_value'] = np.mean(info['c_array'])
 
         info['beta'] = cls.calc_beta(errors)
+
+        ydata = stat.error_rms()
+        (C, alpha), _ = curve_fit(f=lambda x, C, alpha: C * np.exp(alpha * (x - 1)),
+                                  xdata=np.array(range(1, des.N + 1), dtype=float),
+                                  ydata=ydata,
+                                  bounds=((np.min(ydata), -np.inf), (np.max(ydata), np.inf)))
+        info['exp_appr_coef'] = {'C': C, 'alpha': alpha}
         return cls(info)
 
 
@@ -71,6 +80,7 @@ class ProcessedStatistics:
     def save(self):
         info = {'c_value': self.c_value,
                 'beta': self.beta,
+                'exp_appr_coef': self.exp_appr_coef,
                 'MF_d_th': self.MF_d_th,
                 'mean_delta_MF_rnd': self.mean_delta_MF_rnd,
                 'c_array': self.c_array.tolist()}

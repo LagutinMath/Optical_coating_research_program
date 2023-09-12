@@ -110,6 +110,11 @@ class StatInfo:
         errors_rms = pd.Series([np.linalg.norm(errors.iloc[:, j]) / np.sqrt(M) for j in range(N)])
         return errors_rms
 
+    def delta(self):
+        errors = pd.DataFrame(self.error_list)
+        _, N = errors.shape
+        return np.linalg.norm(self.error_rms()) / np.sqrt(N)
+
     # Visualisation
     def rms_bar(self, ymax=None, lang='en', pic_ext=None, **kwargs):
         vis.rms_bar(self, ymax, lang, pic_ext, **kwargs)
