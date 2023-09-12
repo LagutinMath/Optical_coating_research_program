@@ -4,6 +4,8 @@ from copy import deepcopy
 from importlib.resources import files
 from .calc_flux import calc_flux
 from .statistics_info import StatInfo
+from .design_class import Design
+from .target import Target
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
@@ -31,11 +33,14 @@ class ProcessedStatistics:
 
 
     @classmethod
-    def calc(cls, statistic_num, des, target, M=None):
+    def calc(cls, statistic_num, des=None, target=None, M=None):
         info = {}
         info['statistic_num'] = statistic_num
+        stat = StatInfo.load(statistic_num)
+        if des is None: des = Design(name=stat.des_name)
+        if target is None: target = Target.from_json(name=stat.trg_name)
         info['MF_d_th'] = merit(des, target)
-        errors = np.array(StatInfo.load(statistic_num).error_list)
+        errors = np.array(stat.error_list)
         if M is None or M > len(errors): M = len(errors)
         errors = errors[:M]
 

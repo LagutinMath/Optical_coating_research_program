@@ -13,6 +13,7 @@ import opticalcoating.visualisation as vis
 class StatInfo:
     def __init__(self, stat_dict):
         self.des_name = stat_dict['design']
+        self.trg_name = stat_dict.get('target', stat_dict['design'])
         self.creation_time = stat_dict['creation_time']
         self.start_rnd_seed = stat_dict['start_rnd_seed']
         self.waves = stat_dict['waves']
@@ -24,8 +25,9 @@ class StatInfo:
 
 
     @classmethod
-    def legacy(cls, des_th, term_algs, set_up_pars, error_list, start_rnd_seed):
+    def legacy(cls, des_th, term_algs, set_up_pars, error_list, start_rnd_seed, target_name=None):
         stat_dict = {'design': des_th.name,
+                     'target': target_name if target_name is not None else des_th.name,
                      'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                      'start_rnd_seed': start_rnd_seed,
                      'waves': [wave.wavelength for wave in set_up_pars.waves[1:]],
@@ -48,6 +50,7 @@ class StatInfo:
 
     def make_dict(self):
         stat_dict = {'design': self.des_name,
+                     'target': self.trg_name,
                      'creation_time': self.creation_time,
                      'start_rnd_seed': self.start_rnd_seed,
                      'waves': self.waves,
@@ -63,6 +66,7 @@ class StatInfo:
         file_name = find_file_name('Statistic')
         with open(file_name, 'w') as file:
             json.dump(self.make_dict(), file, indent=3)
+        print(f'"{file_name}" is successfully saved')
 
 
     def save_plain_txt(self):
