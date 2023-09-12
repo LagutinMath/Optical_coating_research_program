@@ -5,6 +5,7 @@ from .design_class import Design
 from .target import Target
 from .c_values import ProcessedStatistics
 from .simulation_info import SimInfo
+from .sim_params import SimParams
 from .statistics_info import StatInfo
 
 # импорт вычисляющих функций

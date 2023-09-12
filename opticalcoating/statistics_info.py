@@ -40,6 +40,21 @@ class StatInfo:
 
 
     @classmethod
+    def from_sim_param(cls, sim_param, err_list):
+        stat_dict = {'design': sim_param.des.name,
+                     'target': sim_param.trg if sim_param.trg is not None else sim_param.des.name,
+                     'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                     'start_rnd_seed': sim_param.start_seed,
+                     'waves': [wave.wavelength for wave in sim_param.set_up_pars.waves[1:]],
+                     'term_algs': sim_param.term_algs[1:],
+                     'rates': sim_param.set_up_pars.rates[1:],
+                     'rates_sigmas': sim_param.set_up_pars.rates_sigmas[1:],
+                     'meas_sigmas': sim_param.set_up_pars.meas_sigmas[1:],
+                     'error list': err_list}
+        return cls(stat_dict)
+
+
+    @classmethod
     def load(cls, statistic_num):
         """Загружает данные проведенных симуляций как словарь"""
         fname = files(f'opticalcoating.resources.Statistics').joinpath(
