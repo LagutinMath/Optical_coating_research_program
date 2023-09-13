@@ -84,13 +84,13 @@ def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic
                      'y': f'{q_TR}, %'}}
     kwargs['labels'] = labels[lang]
 
-    if wv_bnd is None: wv_bnd = (0.1, 10_000)
-    for des in designs:
-        left  = max(des.wv_bnd(j)[0] for j in range(des.N + 1))
-        left = 380 if left < 0.1 else left
-        right = min(des.wv_bnd(j)[1] for j in range(des.N + 1))
-        right = 760 if right > 10_000 else right
-        wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
+    if wv_bnd is None: wv_bnd = (380, 760)
+    # for des in designs:
+    #     left  = max(des.wv_bnd(j)[0] for j in range(des.N + 1))
+    #     left = 380 if left < 0.1 else left
+    #     right = min(des.wv_bnd(j)[1] for j in range(des.N + 1))
+    #     right = 760 if right > 10_000 else right
+    #     wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
     kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
     waves = list(map(Wave, kwargs['wv_range']))
 
