@@ -524,6 +524,9 @@ class MonochromStrategyInfo:
                     self.prev_extr[j_cur] = R_full(R_1, self.prev_extr[j_cur], d_s, xi, wv)
             self.q_prev_extr[j_cur] = abg.q_prev_extr(phi, set_up_pars.q_TR[j_cur])
 
+    @classmethod
+    def calc_numerical(cls, des_th: Design, set_up_pars: SetUpParameters, q_subs=True):
+        pass
 
 def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_M=False):
     # save_M ускоряет счет (усл: без смены свидетелей, без смены длины волны)

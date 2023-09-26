@@ -92,7 +92,8 @@ def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic
     #     right = 760 if right > 10_000 else right
     #     wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
     kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
-    waves = list(map(Wave, kwargs['wv_range']))
+    waves = list(map(lambda wv: Wave(wv, kwargs.get('polarisation', 'S'), kwargs.get('angle', 0)),
+                     kwargs['wv_range']))
 
     for des in designs:
         kwargs.setdefault('values_list', []).append(
