@@ -98,10 +98,13 @@ class Design:
 
     def create_json(self):
         fname = files('opticalcoating.resources.Designs').joinpath(f'{self.name}.json')
-        if not os.path.isfile(fname):
-            with open(fname, 'w') as file:
-                inf = json.dumps(self.info, indent=3)
-                print(inf, file=file)
+        if os.path.isfile(fname):
+            print(f'{fname} exists. Overwrite? (Y/N)')
+            if input() not in ('Y','y'):
+                return None
+        with open(fname, 'w') as file:
+            inf = json.dumps(self.info, indent=3)
+            print(inf, file=file)
 
 
     def increase_layer_thickness(self, j, delta_d):
