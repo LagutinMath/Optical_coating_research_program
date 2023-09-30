@@ -13,6 +13,7 @@ from .calc_flux import calc_flux, grad_flux
 from .deposition_simulation import simulation
 from .statistics_info import mean_error_norm
 from .process_statistics import process_statistics
+from .tools import timer
 
 # импорт функций строящих графики
 from .correlation_plots import sigmas_plot
