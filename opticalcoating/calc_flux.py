@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 
 class Wave:
     def __init__(self, wavelength:float, polarisation:str='S', angle:float=0.):
@@ -39,7 +40,7 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False, width=None):
+def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False, width=None, width_form='rect'):
     if layer is not None:
         w_num = des.witness_num(layer)
     else:
@@ -119,12 +120,19 @@ def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q
         T, R = T_1, R_1
 
     if width is not None:
-        x_list = (-2.8569700138728056, -1.355626179974266, 0.0,
-               1.355626179974266, 2.8569700138728056)
-        wvs = [Wave(wv.wavelength + sigma(width) * x) for x in x_list]
-        flux_list = [calc_flux(des, wave, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a,
-                               q_TR=q_TR, layer=layer, save_M=save_M) for wave in wvs]
-        return gauss(flux_list)
+        if width_form in 'rect':
+            flux_in_wv = lambda x: calc_flux(des, Wave(x, wv.polarisation, wv.angle), q_subs=q_subs,
+                                             backside=backside, q_percent=q_percent, n_a=n_a,
+                                             q_TR=q_TR, layer=layer, save_M=save_M)
+            a, b = wv.wavelength - 0.5 * width, wv.wavelength + 0.5 * width
+            return scipy.integrate.romberg(flux_in_wv, a, b, tol=0.0001) / width
+        elif width_form in 'gauss':
+            x_list = (-2.8569700138728056, -1.355626179974266, 0.0,
+                   1.355626179974266, 2.8569700138728056)
+            wvs = [Wave(wv.wavelength + sigma(width) * x) for x in x_list]
+            flux_list = [calc_flux(des, wave, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a,
+                                   q_TR=q_TR, layer=layer, save_M=save_M) for wave in wvs]
+            return gauss(flux_list)
 
     if q_TR == 'both':
         return (100.0 * T, 100.0 * R) if q_percent else (T, R)
