@@ -128,12 +128,12 @@ def mean_error_norm(num):
     return errors_norm.mean()
 
 
-def error_norm_hist(num, *, xmax=None):
+def error_norm_hist(num, *, xmax=None, pic_ext=None):
     errors = pd.DataFrame(StatInfo.load(num).error_list)
     M, N = errors.shape
     errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
 
-    font_properties = {'size': 22,
+    font_properties = {'size': 30,
                        'family': 'Times New Roman'}
     rc('font', **font_properties)
 
@@ -146,6 +146,10 @@ def error_norm_hist(num, *, xmax=None):
     plt.xlim(0., 1.05 * xmax)
     plt.xlabel('Значение нормы вектора ошибок')
     plt.ylabel('Число симуляций')
+
+    if pic_ext:
+        fname = f'error_norm_hist_{num}.{pic_ext}'
+        plt.savefig(fname)
 
 
 

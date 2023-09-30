@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from .calc_flux import calc_flux, Wave
 
 
-rc('font', size=22, family='Times New Roman')
+rc('font', size=30, family='Times New Roman')
 
 # --------------------------
 def bar(heights, labels=None, ymax=None, color=None, special_layers=(), fname=None, **kwargs):
@@ -92,12 +92,23 @@ def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic
     #     right = 760 if right > 10_000 else right
     #     wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
     kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
-    waves = list(map(lambda wv: Wave(wv, kwargs.get('polarisation', 'S'), kwargs.get('angle', 0)),
-                     kwargs['wv_range']))
-
-    for des in designs:
-        kwargs.setdefault('values_list', []).append(
-            np.vectorize(lambda x: calc_flux(des, x, q_subs=q_subs, q_percent=True, q_TR=q_TR))(waves))
+    if 'both' in kwargs.get('polarisation', 'S'):
+        waves_S = list(map(lambda wv: Wave(wv, 'S', kwargs.get('angle', 0)),
+                         kwargs['wv_range']))
+        waves_P = list(map(lambda wv: Wave(wv, 'P', kwargs.get('angle', 0)),
+                         kwargs['wv_range']))
+        for des in designs:
+            kwargs.setdefault('values_list', []).append(
+                np.vectorize(lambda x: calc_flux(des, x, q_subs=q_subs, q_percent=True, q_TR=q_TR))(waves_S))
+        for des in designs:
+            kwargs.setdefault('values_list', []).append(
+                np.vectorize(lambda x: calc_flux(des, x, q_subs=q_subs, q_percent=True, q_TR=q_TR))(waves_P))
+    else:
+        waves = list(map(lambda wv: Wave(wv, kwargs.get('polarisation', 'S'), kwargs.get('angle', 0)),
+                         kwargs['wv_range']))
+        for des in designs:
+            kwargs.setdefault('values_list', []).append(
+                np.vectorize(lambda x: calc_flux(des, x, q_subs=q_subs, q_percent=True, q_TR=q_TR))(waves))
 
     if 'statistic_num' in kwargs and pic_ext:
         kwargs['fname'] = f'comp_{"best" if kwargs["is_best"] else "worst"}_{kwargs["statistic_num"]}.{pic_ext}'
@@ -127,7 +138,7 @@ def dispersion_plot(des, layer_num, wv_bnd=None, lang='en', pic_ext=None, **kwar
     plot(**kwargs)
 
 # --------------------------
-def c_hist(stat, *, xmax=None, lang='en'):
+def c_hist(stat, *, xmax=None, lang='en', pic_ext=None):
     data = pd.Series(stat.c_array)
 
     if xmax is None: xmax = data.max()
@@ -146,6 +157,10 @@ def c_hist(stat, *, xmax=None, lang='en'):
 
     plt.xlabel(labels[lang]['x'])
     plt.ylabel(labels[lang]['y'])
+
+    if pic_ext:
+        fname = f'c_hist_{stat.statistic_num}.{pic_ext}'
+        plt.savefig(fname)
 
 
 def thickness_error_box_plot(*, num, title='', y_range=None, special_layers=[]):
