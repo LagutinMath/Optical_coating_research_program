@@ -1,47 +1,39 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from .calc_flux import Wave
-from .deposition_simulation import simulation, SetUpParameters
+import numpy as np
+from .calc_flux import Wave, calc_flux
 
 
-def monitoring_curve_plot(*, des, waves, q_TR='R', backside=False, q_subs=True, control_wv=1000, lang='en'):
-    term_algs = (des.N + 1) * ['Elimination']
-    # стратегия waves q_TR, backside, (?) witness_layers
-    set_up_pars = SetUpParameters(N=des.N, waves=waves, q_TR=q_TR, backside=backside)
-    sim_res = simulation(des, term_algs, set_up_pars, rnd_seed=None, q_subs=q_subs)
+def monitoring_curve_plot(des, waves, control_wv=1000, lang='en', **kwargs):
+    # kwargs - аргументы для calc_flux
+    grid = {j: np.linspace(0, des.d_th[j], (int(des.d_th[j] // 2.0) + 1)) for j in range(1, des.N + 1)}
 
-    font_properties = {'size': 22,
-                       'family': 'Times New Roman'}
-    rc('font', **font_properties)
+    def thicknesses(j, i):
+        return [des.d_th[j_] for j_ in range(j)] + [grid[j][i]] + (des.N - j) * [0.]
 
-    # несквозной список моментов времени (каждый слой начинает напыляться в момент времени t = 0)
-    layer_time = [[t - time_list[0] for t in time_list] for time_list in sim_res.time_list]
+    def total_opt_thick(j, i):
+        return sum(
+            n * d for n, d in zip([des.n(j, Wave(control_wv)) for j in range(1, des.N + 1)], thicknesses(j, i)[1:]))
 
-    X = []
-    Y = []
+    X = {j: [total_opt_thick(j, i) for i in range(len(grid[j]))] for j in range(1, des.N + 1)}
+    Y = {}
+    for j in range(1, des.N + 1):
+        for i in range(len(grid[j])):
+            des.d = thicknesses(j, i)
+            kwargs.setdefault('q_percent', True)
+            Y.setdefault(j, []).append(calc_flux(des, waves[j], **kwargs))
+
+    rc('font', size=30, family='Times New Roman')
     plt.figure(figsize=(16, 9))
 
-    # полная оптическая толщина
-    h = 0.
     for j in range(1, des.N + 1):
-        # скорость r = set_up_pars.rates[j] (0.5 нм)
-        r = set_up_pars.rates[j]
-        n = des.n(j, Wave(control_wv))
+        color_plot = 'red' if not j % 2 else 'blue'
+        plt.plot(X[j], Y[j], color=color_plot)
 
-        X.append([h + r * n * t for t in layer_time[j]])
-        h += r * n * layer_time[j][-1]
-
-        Y.append([100. * TR for TR in sim_res.flux_meas[j]])
-        if j % 2 == 0:
-            color_plot = 'red'
-        else:
-            color_plot = 'blue'
-        plt.plot(X[j - 1], Y[j - 1], color=color_plot)
-
-    plt.xlim(min(X[0]), max(X[-1]))
+    plt.xlim(min(X[min(X)]), max(X[max(X)]))
     plt.ylim(0., 100.)
-    if lang=='ru':
+    if lang in 'ru':
         plt.xlabel('Оптическая толщина покрытия, нм')
-    else:
+    elif lang in 'en':
         plt.xlabel('Optical thickness, nm')
-    plt.ylabel(q_TR + ', %')
+    plt.ylabel(kwargs.get('q_TR', 'R') + ', %')

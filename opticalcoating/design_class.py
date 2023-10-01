@@ -26,20 +26,20 @@ class Design:
             with open(fname, 'r') as file:
                 self.info = json.load(file)
             self.name = self.info['name']
-            self.d = self.info['thicknesses']
+            self._d_th = self.info['thicknesses']
             if 'n_const' in self.info:
                 self.q_n_const = True
                 self.n_const = self.info['n_const']
             else:
                 self.q_n_const = False
         elif init_2:
-            self.d = d
+            self._d_th = d
             self.q_n_const = True
             self.n_const = n_const
         elif init_3:
             self.info = info
             self.name = info['name']
-            self.d = self.info['thicknesses']
+            self._d_th = self.info['thicknesses']
             if 'n_const' in self.info:
                 self.q_n_const = True
                 self.n_const = self.info['n_const']
@@ -48,7 +48,8 @@ class Design:
         else:
             raise NameError('Impossible. Wrong initialisation Design.')
 
-        self.N = len(self.d) - 1
+        self._d_cur = self._d_th[:]
+
         if witness_layers is None:
             self.witnesses = [list(range(1,self.N + 1))]
         else:
@@ -66,6 +67,25 @@ class Design:
         # полная хар-кая матрица j слоев (cur_M = temp_M во время смены слоя)
         self.temp_M = [[1.0, 0.0], [0.0, 1.0]]
 
+    @property
+    def N(self):
+        return len(self._d_th) - 1
+
+    @property
+    def d(self):
+        return self._d_cur
+
+    @d.setter
+    def d(self, d_act):
+        if len(d_act) != (self.N + 1): raise ValueError('Некорректная длина вектора')
+        self._d_cur = d_act
+
+    @property
+    def d_th(self):
+        return self._d_th[:]
+
+    def set_orig_d_th(self):
+        self._d_cur = self._d_th[:]
 
     def witness_num(self, layer):
         """Возвращает номер свидетеля на который будет напыляться слой layer
