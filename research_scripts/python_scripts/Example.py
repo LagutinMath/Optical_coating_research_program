@@ -23,14 +23,14 @@ if __name__ == '__main__':
     default['rate'] = [0.5, 0.8] # nm / sec
     default['std rate'] = [5, 10] # in percent
     default['std meas'] = 0.1 # in percent
-    default['T/R'] = 'T'
+    default['T/R'] = 'R'
     default['polarisation'] = 'S'
     default['angle'] = 0
     default['backside'] = False
 
-    sim_params = ({'design': "AR4_1",
-                   'target': "AR4",
-                   'wave': 400,
+    sim_params = ({'design': "QWM20",
+                   'target': "QWM20",
+                   'wave': 510,
                    'T/R': 'R'}, )
 
     for sim_param in [oc.SimParams.from_dict(param, default) for param in sim_params]:

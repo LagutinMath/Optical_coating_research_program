@@ -22,6 +22,8 @@ class StatInfo:
         self.rates_sigmas = [None] + stat_dict['rates_sigmas']
         self.meas_sigmas = [None] + stat_dict['meas_sigmas']
         self.error_list = stat_dict['error list']
+        self._mean_error_norm = None
+        self._median_error_norm = None
 
 
     @classmethod
@@ -66,6 +68,8 @@ class StatInfo:
     def make_dict(self):
         stat_dict = {'design': self.des_name,
                      'target': self.trg_name,
+                     'mean_error_norm': self.mean_error_norm,
+                     'median_error_norm': self.median_error_norm,
                      'creation_time': self.creation_time,
                      'start_rnd_seed': self.start_rnd_seed,
                      'waves': self.waves,
@@ -96,12 +100,23 @@ class StatInfo:
                     print(self.error_list[i][j], end='\t', file=file)
                 print('', file=file)
 
-
+    @property
     def mean_error_norm(self):
-        errors = pd.DataFrame(self.error_list)
-        M, N = errors.shape
-        errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
-        return errors_norm.mean()
+        if self._mean_error_norm is None:
+            errors = pd.DataFrame(self.error_list)
+            M, N = errors.shape
+            errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
+            self._mean_error_norm = errors_norm.mean()
+        return self._mean_error_norm
+
+    @property
+    def median_error_norm(self):
+        if self._median_error_norm is None:
+            errors = pd.DataFrame(self.error_list)
+            M, N = errors.shape
+            errors_norm = pd.Series([np.linalg.norm(errors.iloc[i, :]) for i in range(M)])
+            self._median_error_norm = errors_norm.median()
+        return self._median_error_norm
 
 
     def error_rms(self):
