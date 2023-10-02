@@ -25,6 +25,7 @@ def process_statistics():
         info_dct.setdefault('des_name', []).append(stat.des_name)
         info_dct.setdefault('N_sim', []).append(len(stat.error_list))
         info_dct.setdefault('term_algs', []).append(essential_info(stat.term_algs))
+        info_dct.setdefault('width', []).append(stat.width if stat.width is not None else 0)
         info_dct.setdefault('waves', []).append(essential_info(stat.waves))
         info_dct.setdefault('rates', []).append(essential_info(stat.rates))
         info_dct.setdefault('rates_sigmas', []).append(essential_info(stat.rates_sigmas))

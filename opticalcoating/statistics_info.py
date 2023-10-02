@@ -16,6 +16,7 @@ class StatInfo:
         self.trg_name = stat_dict.get('target', stat_dict['design'])
         self.creation_time = stat_dict['creation_time']
         self.start_rnd_seed = stat_dict['start_rnd_seed']
+        self.width = stat_dict['width']
         self.waves = stat_dict['waves']
         self.term_algs = [None] + stat_dict['term_algs']
         self.rates = [None] + stat_dict['rates']
@@ -32,6 +33,7 @@ class StatInfo:
                      'target': target_name if target_name is not None else des_th.name,
                      'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                      'start_rnd_seed': start_rnd_seed,
+                     'width': set_up_pars.width,
                      'waves': [wave.wavelength for wave in set_up_pars.waves[1:]],
                      'term_algs': term_algs[1:],
                      'rates': set_up_pars.rates[1:],
@@ -47,6 +49,7 @@ class StatInfo:
                      'target': sim_param.trg if sim_param.trg is not None else sim_param.des.name,
                      'creation_time': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                      'start_rnd_seed': sim_param.start_seed,
+                     'width': sim_param.set_up_pars.width,
                      'waves': [wave.wavelength for wave in sim_param.set_up_pars.waves[1:]],
                      'term_algs': sim_param.term_algs[1:],
                      'rates': sim_param.set_up_pars.rates[1:],
@@ -72,6 +75,7 @@ class StatInfo:
                      'median_error_norm': self.median_error_norm,
                      'creation_time': self.creation_time,
                      'start_rnd_seed': self.start_rnd_seed,
+                     'width': self.width,
                      'waves': self.waves,
                      'term_algs': self.term_algs[1:],
                      'rates': self.rates[1:],

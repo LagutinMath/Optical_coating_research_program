@@ -32,12 +32,13 @@ class SimParams:
             meas_sigmas = [None] + [0.01 * std_meas for std_meas in temp[1:]]
 
         self.set_up_pars = SetUpParameters(N=self.des.N,
-                                      waves=waves,
-                                      rates=rates,
-                                      q_TR=info['T/R'],
-                                      backside=info['backside'],
-                                      meas_sigmas=meas_sigmas,
-                                      rates_sigmas=rates_sigmas)
+                                           waves=waves,
+                                           rates=rates,
+                                           q_TR=info['T/R'],
+                                           backside=info['backside'],
+                                           meas_sigmas=meas_sigmas,
+                                           rates_sigmas=rates_sigmas,
+                                           width=info.get('width', None))
 
 
     def get_tasks(self, N_sim):
