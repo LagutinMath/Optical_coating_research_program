@@ -77,7 +77,7 @@ def plot(wv_range, values_list, labels=None, fname=None, **kwargs):
     if fname is not None: plt.savefig(fname)
 
 
-def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic_ext=None, **kwargs):
+def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic_ext=None, step=0.5,  **kwargs):
     labels = {'ru': {'x': 'Длина волны, нм',
                      'y': f'{q_TR}, %'},
               'en': {'x': 'Wavelength, nm',
@@ -91,7 +91,7 @@ def spectral_plot(designs, *, q_TR='T', wv_bnd=None, q_subs=True, lang='en', pic
     #     right = min(des.wv_bnd(j)[1] for j in range(des.N + 1))
     #     right = 760 if right > 10_000 else right
     #     wv_bnd = (max(left, wv_bnd[0]), min(right, wv_bnd[1]))
-    kwargs['wv_range'] = np.linspace(*wv_bnd, num=int(2*(wv_bnd[1]-wv_bnd[0])))
+    kwargs['wv_range'] = np.linspace(*wv_bnd, num=int((1/step)*(wv_bnd[1]-wv_bnd[0])) + 1)
     if 'both' in kwargs.get('polarisation', 'S'):
         waves_S = list(map(lambda wv: Wave(wv, 'S', kwargs.get('angle', 0)),
                          kwargs['wv_range']))
