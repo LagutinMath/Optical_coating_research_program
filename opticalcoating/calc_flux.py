@@ -1,8 +1,13 @@
+from functools import singledispatchmethod, total_ordering
 import numpy as np
 import scipy
 
+@total_ordering
 class Wave:
-    def __init__(self, wavelength:float, polarisation:str='S', angle:float=0.):
+    __slots__ = ('wavelength', 'polarisation', 'angle')
+
+    @singledispatchmethod
+    def __init__(self, wavelength, polarisation='S', angle=0.):
         """Incident wave class
         :param wavelength: wavelength in nm
         :param polarisation: 'S' or 'P' polarisation
@@ -12,12 +17,38 @@ class Wave:
         self.polarisation = polarisation
         self.angle = angle
 
+    @__init__.register(tuple)
+    def _from_tuple(self, wave_tuple):
+        self.wavelength = wave_tuple[0]
+        self.polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
+        self.angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
+
     @classmethod
-    def from_tuple(cls, wave_tuple:tuple):
+    def from_tuple(cls, wave_tuple: tuple):
         wavelength = wave_tuple[0]
         polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
         angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
         return cls(wavelength, polarisation, angle)
+
+    def __float__(self):
+        return float(self.wavelength)
+
+    def __repr__(self):
+        return f"Wave({self.wavelength}, '{self.polarisation}', {self.angle})"
+
+    def __eq__(self, other):
+        if isinstance(other, Wave):
+            return (self.wavelength == other.wavelength and
+                    self.polarisation == other.polarisation and
+                    self.angle == other.angle)
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, Wave):
+            if self.angle > other.angle: return True
+            if self.polarisation != other.polarisation and other.polarisation == 'P': return True
+            return self.wavelength < other.wavelength
+        return NotImplemented
 
 
 def gauss(flux_list):
