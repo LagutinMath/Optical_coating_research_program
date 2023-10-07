@@ -2,6 +2,20 @@ from functools import singledispatchmethod, total_ordering
 from enum import Enum
 from math import pi
 
+class IndexFormula(Enum):
+    Const = 1
+    Linear_interp = 2
+    Sellmeier = 3
+    Cauchy = 4
+
+    @classmethod
+    def __call__(cls, name):
+        if name in 'Const': return cls.Const
+        if name in 'Table': return cls.Linear_interp
+        if name in 'Sellmeier': return cls.Sellmeier
+        if name in 'Cauchy': return cls.Cauchy
+        raise ValueError(f'{name} is absent in IndexFormula')
+
 class TermCase(Enum):
     OnTime = 1
     LateStop = 2

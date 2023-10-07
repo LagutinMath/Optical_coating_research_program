@@ -67,6 +67,8 @@ class Design:
         # полная хар-кая матрица j слоев (cur_M = temp_M во время смены слоя)
         self.temp_M = [[1.0, 0.0], [0.0, 1.0]]
 
+
+
     @property
     def N(self):
         return len(self._d_th) - 1
