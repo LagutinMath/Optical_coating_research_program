@@ -2,9 +2,16 @@ from functools import singledispatchmethod, total_ordering
 from enum import Enum
 from math import pi
 
+class TermCase(Enum):
+    OnTime = 1
+    LateStop = 2
+    EmergencyStop = 3
+
 class WidthForm(Enum):
     rect, gauss = 1, 2
+    Rect, Gauss = 1, 2
     r, g = 1, 2
+    R, G = 1, 2
 
 @total_ordering
 class Wave:

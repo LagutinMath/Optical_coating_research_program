@@ -4,7 +4,7 @@ from datetime import datetime
 from numpy import pi
 from .design_class import *
 from .simulation_info import SimInfo
-from .units import Wave
+from .units import Wave, TermCase
 
 
 class SetUpParameters:
@@ -583,7 +583,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
         # while not term_cond:
         for lsc in range(1, max_steps):
             if term_algs[j] == 'Relative Thickness Error':
-                term_cond_case[j] = 1
+                term_cond_case[j] = TermCase.OnTime
                 des_act.increase_layer_thickness(j, des_th.d[j] * (1. + norm_3sigma_rnd(rng, sigma=0.01)))
                 break
 
@@ -635,7 +635,7 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
                     # Termination case 1
                     # Правильный случай прекращения напыления по уровню
                     term_cond = True
-                    term_cond_case[j] = 1
+                    term_cond_case[j] = TermCase.OnTime
 
                     # delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
                     #     + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
@@ -656,13 +656,13 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
                     # Termination case 2
                     # На очередном шаге было обнаружено, что произошло перепыление
                     term_cond = True
-                    term_cond_case[j] = 2
+                    term_cond_case[j] = TermCase.LateStop
 
                 elif des_act.d[j] > 1.25 * des_th.d[j]:
                     # Termination case 3
                     # Экстренное прекращение напыления --- остальные критерии не сработали
                     term_cond = True
-                    term_cond_case[j] = 3
+                    term_cond_case[j] = TermCase.EmergencyStop
 
                 if term_cond:
                     if set_up_pars.delay_time_sigma != 0.0:

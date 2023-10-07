@@ -1,5 +1,5 @@
 # импорт классов
-from .units import Wave, WidthForm
+from .units import Wave, WidthForm, TermCase
 from .deposition_simulation import SetUpParameters
 from .design_class import Design
 from .target import Target
