@@ -538,10 +538,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
     max_steps = len_sim_list[1]
 
-    # time_list = np.empty(len_sim_list, dtype=float)
-    # flux_meas = np.empty(len_sim_list, dtype=float)
-    # flux_act = np.empty(len_sim_list, dtype=float)
-
     time_list = [[0.0] for _ in range(des_th.N + 1)]
     d_j_act_t = [[0.0] for _ in range(des_th.N + 1)]
     flux_meas = [[0.0] for _ in range(des_th.N + 1)]
@@ -683,107 +679,6 @@ def simulation(des_th, term_algs, set_up_pars, rnd_seed=None, q_subs=True, save_
     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength,
                    rnd_seed=rnd_seed, d_j_act_t=d_j_act_t, set_up_pars=set_up_pars, des=des_th, nonloccoef=nonloccoef)
 
-
-# def measurement_simulation(sim_info: SimInfo, waves):
-#     rnd_seed = sim_info.rnd_seed
-#     rng = np.random.default_rng(rnd_seed)
-#
-#     des_th = sim_info.des
-#     set_up_pars = sim_info.set_up_pars
-#     # Для производительности определим и выделим заранее достаточное кол-во памяти массивам
-#     len_sim_list = num_step_layer_estimation(des_th, set_up_pars)
-#     max_steps = len_sim_list[1]
-#
-#     time_list = [[0.0] for _ in range(des_th.N + 1)]
-#     d_j_act_t = [[0.0] for _ in range(des_th.N + 1)]
-#     flux_meas = [[0.0] for _ in range(des_th.N + 1)]
-#     flux_act = [[0.0] for _ in range(des_th.N + 1)]
-#
-#     # Информация о дизайне в текущий для симуляции момент времени
-#     des_act = copy.deepcopy(des_th)
-#     # des_act.d = np.zeros(des_th.N + 1, dtype=float)
-#     des_act.d = (des_th.N + 1) * [0.0]
-#     # term_cond_case = np.zeros(des_th.N + 1, dtype=float)
-#     term_cond_case = (des_th.N + 1) * [0]
-#
-#     for j in range(1, des_th.N + 1):
-#         term_cond = False
-#
-#         # в конце напыления шаг по времени может быть меньше tau
-#         # поэтому введём переменную delta_t означающую размер интервала времени для выполняемого шага
-#         delta_t = set_up_pars.tau
-#         # dt --- времени прошло с начала напыления слоя
-#         dt = 0.0
-#         expected_interval = False
-#
-#         # шаг *измерения и анализа*
-#         # lsc = 0  # layer_step_counter
-#         time_list[j][0] = time_list[j - 1][-1]
-#         flux_act[j][0] = des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-#                                            backside=set_up_pars.backside)
-#         flux_meas[j][0] = flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j])
-#
-#         for lsc in range(1, max_steps):
-#
-#             # шаг *изменения состояния природы*
-#             dt += delta_t
-#             cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
-#             des_act.increase_layer_thickness(j, delta_t * cur_rate)
-#
-#             # шаг *измерения и анализа*
-#             time_list[j].append(time_list[j][-1] + delta_t)
-#             d_j_act_t[j].append(des_act.d[j])
-#             flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-#                                                  backside=set_up_pars.backside))
-#             flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
-#
-#                 t_term = nonloc_alg.calc_t(d_th=des_th.d[j], lvl=term_flux_lvl, q_TR=set_up_pars.q_TR[j])
-#
-#                 if 0 <= (t_term - dt) <= delta_t:
-#                     # Termination case 1
-#                     # Правильный случай прекращения напыления по уровню
-#                     term_cond = True
-#                     term_cond_case[j] = 1
-#
-#                     # delta_t = nonloc_alg.calc_delta_t(dt, term_flux_lvl, set_up_pars.q_TR[j]) \
-#                     #     + norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
-#                     delta_t = t_term - dt
-#
-#                     # шаг *изменения состояния природы*
-#                     cur_rate = set_up_pars.rates[j] + norm_3sigma_rnd(rng, sigma=set_up_pars.rates_sigmas[j])
-#                     des_act.increase_layer_thickness(j, delta_t * cur_rate)
-#
-#                     time_list[j].append(time_list[j][-1] + delta_t)
-#                     d_j_act_t[j].append(des_act.d[j])
-#                     flux_act[j].append(des_act.calc_flux(set_up_pars.waves[j], q_TR=set_up_pars.q_TR[j], layer=j,
-#                                                          backside=set_up_pars.backside))
-#                     flux_meas[j].append(flux_act[j][-1] + norm_3sigma_rnd(rng, sigma=set_up_pars.meas_sigmas[j]))
-#
-#                 elif dt > t_term:
-#                     # Termination case 2
-#                     # На очередном шаге было обнаружено, что произошло перепыление
-#                     term_cond = True
-#                     term_cond_case[j] = 2
-#
-#                 elif des_act.d[j] > 1.25 * des_th.d[j]:
-#                     # Termination case 3
-#                     # Экстренное прекращение напыления --- остальные критерии не сработали
-#                     term_cond = True
-#                     term_cond_case[j] = 3
-#
-#                 if term_cond:
-#                     if set_up_pars.delay_time_sigma != 0.0:
-#                         # Ошибка времени закрытия заслонки
-#                         shutter_delay_dt = norm_3sigma_rnd(rng, mean=set_up_pars.delay_time, sigma=set_up_pars.delay_time_sigma)
-#                         # На этом шаге прирост толщины может быть и положительным и отрицательным
-#                         des_act.increase_layer_thickness(j, shutter_delay_dt * cur_rate)
-#                         d_j_act_t[j][-1] = des_act.d[j]
-#                     break
-#         else:
-#             raise NameError(f'Overflow simulation error on seed = {rnd_seed}')
-#
-#     wavelength = [set_up_pars.waves[j].wavelength for j in range(1, des_th.N + 1)]
-#     return SimInfo(des_th.d, des_act.d, time_list, flux_meas, term_cond_case, wavelength, d_j_act_t=d_j_act_t)
 
 
 
