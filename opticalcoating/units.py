@@ -2,18 +2,23 @@ from functools import singledispatchmethod, total_ordering
 from enum import Enum
 from math import pi
 
+class Role(Enum):
+    # Material (layer) roles
+    Substrate, S, Subs, subs  = 1, 1, 1, 1
+    H, L, A, B, C = 2, 3, 4, 5, 6
+
 class IndexFormula(Enum):
     Const = 1
     Linear_interp = 2
     Sellmeier = 3
     Cauchy = 4
 
-    @classmethod
-    def __call__(cls, name):
-        if name in 'Const': return cls.Const
-        if name in 'Table': return cls.Linear_interp
-        if name in 'Sellmeier': return cls.Sellmeier
-        if name in 'Cauchy': return cls.Cauchy
+    @staticmethod
+    def from_str(name):
+        if name in 'Const': return IndexFormula.Const
+        if name in 'Table': return IndexFormula.Linear_interp
+        if name in 'Sellmeier': return IndexFormula.Sellmeier
+        if name in 'Cauchy': return IndexFormula.Cauchy
         raise ValueError(f'{name} is absent in IndexFormula')
 
 class TermCase(Enum):
