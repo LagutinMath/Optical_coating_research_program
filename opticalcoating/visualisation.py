@@ -5,7 +5,8 @@ import numpy as np
 import json
 from matplotlib import rc
 import matplotlib.pyplot as plt
-from .calc_flux import calc_flux, Wave
+from .units import Wave
+from .calc_flux import calc_flux
 
 
 rc('font', size=30, family='Times New Roman')

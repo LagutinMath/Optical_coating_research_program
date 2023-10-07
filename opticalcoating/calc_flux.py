@@ -1,60 +1,6 @@
-from functools import singledispatchmethod, total_ordering
+from .units import WidthForm
 import numpy as np
 import scipy
-
-@total_ordering
-class Wave:
-    __slots__ = ('wavelength', 'polarisation', 'angle')
-
-    @singledispatchmethod
-    def __init__(self, wavelength, polarisation='S', angle=0.):
-        """Incident wave class
-        :param wavelength: wavelength in nm
-        :param polarisation: 'S' or 'P' polarisation
-        :param angle: angle in radians
-        """
-        self.wavelength = wavelength
-        self.polarisation = polarisation
-        self.angle = angle
-
-    @__init__.register(list)
-    @__init__.register(tuple)
-    def _from_list_tuple(self, wave_tuple):
-        self.wavelength = wave_tuple[0]
-        self.polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
-        self.angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
-
-    def __float__(self):
-        return float(self.wavelength)
-
-    def __repr__(self):
-        return f"Wave({self.wavelength}, '{self.polarisation}', {self.angle})"
-
-    def __eq__(self, other):
-        if isinstance(other, Wave):
-            return (self.wavelength == other.wavelength and
-                    self.polarisation == other.polarisation and
-                    self.angle == other.angle)
-        return NotImplemented
-
-    def __lt__(self, other):
-        if isinstance(other, Wave):
-            if self.angle > other.angle: return True
-            if self.polarisation != other.polarisation and other.polarisation == 'P': return True
-            return self.wavelength < other.wavelength
-        return NotImplemented
-
-
-def gauss(flux_list):
-    """Численное пятиточечное интегрирование по формулам Гаусса-Кристоффеля с гауссовой весовой функцией"""
-    return (0.011257411327720682 * flux_list[0] + 0.22207592200561266 * flux_list[1] +
-            0.5333333333333333 * flux_list[2] +
-            0.22207592200561266 * flux_list[3] + 0.011257411327720682 * flux_list[4])
-
-
-def sigma(FHWM):
-    # FHWM = 2 Sqrt[2 Log[2]] * sigma
-    return 0.5887050112577373 * FHWM
 
 
 def sp_mat_mult(A, B):  # special matrix multiplication
@@ -65,7 +11,10 @@ def sp_mat_mult(A, B):  # special matrix multiplication
     return [[m00, m01], [m10, m11]]
 
 
-def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False, width=None, width_form='rect'):
+def calc_flux(des, wv, *,
+              q_subs=True, backside=False, q_percent=False, n_a=1, q_TR='R', layer=None, save_M=False,
+              width=None, width_form=WidthForm.gauss):
+
     if layer is not None:
         w_num = des.witness_num(layer)
     else:
@@ -145,19 +94,29 @@ def calc_flux(des, wv, *, q_subs=True, backside=False, q_percent=False, n_a=1, q
         T, R = T_1, R_1
 
     if width is not None:
-        if width_form in 'rect':
-            flux_in_wv = lambda x: calc_flux(des, Wave(x, wv.polarisation, wv.angle), q_subs=q_subs,
-                                             backside=backside, q_percent=q_percent, n_a=n_a,
-                                             q_TR=q_TR, layer=layer, save_M=save_M)
+        tolerance  = 0.0001
+
+        def exact_flux(x):
+            return calc_flux(des, wv(x), q_subs=q_subs,
+                             backside=backside, q_percent=q_percent, n_a=n_a,
+                             q_TR=q_TR, layer=layer, save_M=save_M)
+
+        def std_sigma(FHWM):
+            # FHWM = 2 Sqrt[2 Log[2]] * sigma
+            return 0.5887050112577373 * FHWM
+
+        def gaussian(sgm):
+            def f(x): return (1 / (sgm * np.sqrt(2 * np.pi))) * np.exp(- ((x - wv.wavelength)**2) / (2 * sgm**2))
+            return f
+
+        if width_form is WidthForm.rect:
             a, b = wv.wavelength - 0.5 * width, wv.wavelength + 0.5 * width
-            return scipy.integrate.romberg(flux_in_wv, a, b, tol=0.0001) / width
-        elif width_form in 'gauss':
-            x_list = (-2.8569700138728056, -1.355626179974266, 0.0,
-                   1.355626179974266, 2.8569700138728056)
-            wvs = [Wave(wv.wavelength + sigma(width) * x) for x in x_list]
-            flux_list = [calc_flux(des, wave, q_subs=q_subs, backside=backside, q_percent=q_percent, n_a=n_a,
-                                   q_TR=q_TR, layer=layer, save_M=save_M) for wave in wvs]
-            return gauss(flux_list)
+            return scipy.integrate.romberg(exact_flux, a, b, tol=tolerance) / width
+        elif width_form is WidthForm.gauss:
+            # if w != 3 (sigma) -> normalize scipy.special.erf(w / np.sqrt(2))
+            a, b = wv.wavelength - 3 * std_sigma(width), wv.wavelength + 3 * std_sigma(width)
+            return (scipy.integrate.romberg(lambda x: gaussian(std_sigma(width))(x) * exact_flux(x),
+                                            a, b, tol=tolerance) / 0.9973002039367398)
 
     if q_TR == 'both':
         return (100.0 * T, 100.0 * R) if q_percent else (T, R)

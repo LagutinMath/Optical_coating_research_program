@@ -1,7 +1,7 @@
 import json
 from importlib.resources import files
 from datetime import datetime
-from .calc_flux import Wave
+from .units import Wave
 
 class Target:
     def __init__(self, name, waves, flux_target, creation_time=None, q_TR='T', dTa=None):

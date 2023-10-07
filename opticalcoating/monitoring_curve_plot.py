@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
-from .calc_flux import Wave, calc_flux
+from .units import Wave
+from .calc_flux import calc_flux
 
 class MonochromStrategyData():
     def __init__(self, des, waves, X, Y, plot_params, control_wv=1000):

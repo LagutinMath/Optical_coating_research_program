@@ -1,5 +1,5 @@
 # импорт классов
-from .calc_flux import Wave
+from .units import Wave, WidthForm
 from .deposition_simulation import SetUpParameters
 from .design_class import Design
 from .target import Target

@@ -1,6 +1,6 @@
 from time import time
 import random
-from .calc_flux import Wave
+from .units import Wave
 from .design_class import Design
 from .deposition_simulation import SetUpParameters
 

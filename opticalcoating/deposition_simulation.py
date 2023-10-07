@@ -4,7 +4,7 @@ from datetime import datetime
 from numpy import pi
 from .design_class import *
 from .simulation_info import SimInfo
-from .calc_flux import Wave
+from .units import Wave
 
 
 class SetUpParameters:
