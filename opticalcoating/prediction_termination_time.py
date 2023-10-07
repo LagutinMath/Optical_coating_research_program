@@ -43,7 +43,3 @@ class MonochromaticDeposition():
         t_term = self.nonloc_alg[self.j].calc_t(d_th=self.des_th.d[self.j],
                                                 lvl=term_flux_lvl, q_TR=self.set_up_pars.q_TR[self.j])
         return t_term
-
-
-if __name__ == "__main__":
-    print('Hello!')

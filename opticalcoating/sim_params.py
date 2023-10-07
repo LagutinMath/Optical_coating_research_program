@@ -1,4 +1,3 @@
-from time import time
 import random
 from .units import Wave
 from .design_class import Design

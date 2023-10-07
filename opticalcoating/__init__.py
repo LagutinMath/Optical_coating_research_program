@@ -16,6 +16,5 @@ from .process_statistics import process_statistics
 from .tools import timer
 
 # импорт функций строящих графики
-from .correlation_plots import sigmas_plot
 from .monitoring_curve_plot import MonochromStrategyData
-from .visualisation import thickness_error_box_plot, thickness_error_violin_plot, c_hist
+from .visualisation import thickness_error_box_plot, thickness_error_violin_plot, c_hist, sigmas_plot, std_values
