@@ -17,18 +17,12 @@ class Wave:
         self.polarisation = polarisation
         self.angle = angle
 
+    @__init__.register(list)
     @__init__.register(tuple)
-    def _from_tuple(self, wave_tuple):
+    def _from_list_tuple(self, wave_tuple):
         self.wavelength = wave_tuple[0]
         self.polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
         self.angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
-
-    @classmethod
-    def from_tuple(cls, wave_tuple: tuple):
-        wavelength = wave_tuple[0]
-        polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
-        angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
-        return cls(wavelength, polarisation, angle)
 
     def __float__(self):
         return float(self.wavelength)

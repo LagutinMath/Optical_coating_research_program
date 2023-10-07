@@ -24,7 +24,7 @@ class Target:
             dct = json.load(file)
         return cls(name=name,
                    creation_time = dct['creation_time'],
-                   waves=[Wave.from_tuple(wv_tuple)
+                   waves=[Wave(wv_tuple)
                           for wv_tuple in zip(dct['wv_list'], dct.get('pol_list'), dct.get('angle_list'))],
                    q_TR = dct['q_TR'],
                    flux_target = dct['flux_target'],
