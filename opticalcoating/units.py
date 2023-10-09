@@ -32,12 +32,21 @@ class WidthForm(Enum):
     r, g = 1, 2
     R, G = 1, 2
 
+class Pol(Enum):
+    S, P = 1, 2
+    s, p = 1, 2
+
+    @staticmethod
+    def from_str(s):
+        if s in ('S', 's'): return Pol.S
+        if s in ('P', 'p'): return Pol.P
+
 @total_ordering
 class Wave:
     __slots__ = ('_wavelength', '_polarisation', '_angle')
 
     @singledispatchmethod
-    def __init__(self, wavelength, polarisation='S', angle=0.):
+    def __init__(self, wavelength, polarisation=Pol.S, angle=0.):
         """Incident wave class
         :param wavelength: wavelength in nm
         :param polarisation: 'S' or 'P' polarisation
@@ -51,7 +60,7 @@ class Wave:
     @__init__.register(tuple)
     def _from_list_tuple(self, wave_tuple):
         self._wavelength = wave_tuple[0]
-        self._polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else 'S'
+        self._polarisation = wave_tuple[1] if len(wave_tuple) > 1 and wave_tuple[1] is not None else Pol.S
         self._angle = wave_tuple[2] if len(wave_tuple) > 2 and wave_tuple[2] is not None else 0
 
     @property
@@ -78,7 +87,7 @@ class Wave:
     def __eq__(self, other):
         if isinstance(other, Wave):
             return (self.wavelength == other.wavelength and
-                    self.polarisation == other.polarisation and
+                    self.polarisation is other.polarisation and
                     self.angle == other.angle)
         return NotImplemented
 
@@ -88,7 +97,7 @@ class Wave:
     def __lt__(self, other):
         if isinstance(other, Wave):
             if self.angle > other.angle: return True
-            if self.polarisation != other.polarisation and other.polarisation == 'P': return True
+            if self.polarisation is not other.polarisation and other.polarisation is Pol.P: return True
             return self.wavelength < other.wavelength
         return NotImplemented
 
@@ -96,7 +105,7 @@ class Wave:
         if isinstance(1., (int, float)):
             return Wave(self.wavelength + other, self.polarisation, self.angle)
         elif isinstance(other, Wave):
-            if (self.polarisation == other.polarisation and self.angle == other.angle):
+            if (self.polarisation is other.polarisation and self.angle == other.angle):
                 return Wave(self.wavelength + other.wavelength, self.polarisation, self.angle)
             else:
                 return NotImplemented
@@ -110,7 +119,7 @@ class Wave:
         if isinstance(1., (int, float)):
             return Wave(self.wavelength - other, self.polarisation, self.angle)
         elif isinstance(other, Wave):
-            if (self.polarisation == other.polarisation and self.angle == other.angle):
+            if (self.polarisation is other.polarisation and self.angle == other.angle):
                 return Wave(self.wavelength - other.wavelength, self.polarisation, self.angle)
             else:
                 return NotImplemented
@@ -121,7 +130,7 @@ class Wave:
         if isinstance(1., (int, float)):
             return Wave(other - self.wavelength, self.polarisation, self.angle)
         elif isinstance(other, Wave):
-            if (self.polarisation == other.polarisation and self.angle == other.angle):
+            if (self.polarisation is other.polarisation and self.angle == other.angle):
                 return Wave(other.wavelength - self.wavelength, self.polarisation, self.angle)
             else:
                 return NotImplemented
