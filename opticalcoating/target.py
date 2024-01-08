@@ -36,9 +36,10 @@ class Target:
                'creation_time': self.creation_time,
                'q_TR': self.q_TR,
                'wv_list': [wave.wavelength for wave in self.waves],
-               'pol_list': [wave.polarisation for wave in self.waves],
+               'pol_list': [str(wave.polarisation) for wave in self.waves],
                'angle_list': [wave.angle for wave in self.waves],
-               'flux_target': self.flux_target}
+               'flux_target': self.flux_target,
+               'dTa': self.dTa}
 
         with open(f"../../opticalcoating/resources/Targets/Target_{self.name}.json",
                   'w', encoding='utf-8') as file:

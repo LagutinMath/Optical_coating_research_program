@@ -41,6 +41,10 @@ class Pol(Enum):
         if s in ('S', 's'): return Pol.S
         if s in ('P', 'p'): return Pol.P
 
+    def __str__(self):
+        if self.S: return 'S'
+        if self.P: return 'P'
+
 @total_ordering
 class Wave:
     __slots__ = ('_wavelength', '_polarisation', '_angle')
