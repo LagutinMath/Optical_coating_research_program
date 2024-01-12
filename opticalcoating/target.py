@@ -4,7 +4,7 @@ from datetime import datetime
 from .units import Wave
 
 class Target:
-    def __init__(self, name, waves, flux_target, creation_time=None, q_TR='T', dTa=None):
+    def __init__(self, name, waves, flux_target, creation_time=None, q_TR='T', dTa=None, Q=None):
         """Target file
         :param waves: tuple of Wave class objects
         :param flux_target: absolute value, i.e. range 0.0 - 1.0
@@ -15,6 +15,7 @@ class Target:
         self.flux_target = flux_target
         self.creation_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S") if creation_time is None else creation_time
         self.dTa = dTa
+        self.Q = Q
 
 
     @classmethod
@@ -28,7 +29,8 @@ class Target:
                           for wv_tuple in zip(dct['wv_list'], dct.get('pol_list'), dct.get('angle_list'))],
                    q_TR = dct['q_TR'],
                    flux_target = dct['flux_target'],
-                   dTa = dct.get('dTa'))
+                   dTa = dct.get('dTa'),
+                   Q = dct.get('Q'))
 
 
     def save(self):
@@ -39,7 +41,8 @@ class Target:
                'pol_list': [str(wave.polarisation) for wave in self.waves],
                'angle_list': [wave.angle for wave in self.waves],
                'flux_target': self.flux_target,
-               'dTa': self.dTa}
+               'dTa': self.dTa,
+               'Q': self.Q}
 
         with open(f"../../opticalcoating/resources/Targets/Target_{self.name}.json",
                   'w', encoding='utf-8') as file:

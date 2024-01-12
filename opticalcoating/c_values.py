@@ -15,11 +15,21 @@ def merit(des, target, error=None, MF_d_th=0.0):
         des.d = [des.d[0]] + [des.d[i] + error[i - 1] for i in range(1, des.N + 1)]
 
     waves, T_target, dTa = target.waves, target.flux_target, target.dTa
+    L = len(waves)
     T_des = np.vectorize(lambda wave: calc_flux(des, wave, q_subs=False, q_percent=False, q_TR=target.q_TR))(waves)
 
-    if dTa is None: delta_T = T_des - T_target
-    else: delta_T = (T_des - T_target) / dTa
-    return np.sqrt(np.dot(delta_T, delta_T) / len(waves)) - MF_d_th
+    if target.Q is None:
+        if dTa is None: delta_T = T_des - T_target
+        else: delta_T = (T_des - T_target) / dTa
+    else:
+        delta_T = np.zeros(L)
+        for i in range(L):
+            if 'B' == target.Q[i]:
+                delta_T[i] = 0. if T_des[i] < T_target[i] else (T_des[i] - T_target[i]) / dTa[i]
+            else:
+                delta_T[i] = (T_des[i] - T_target[i]) / dTa[i]
+
+    return np.sqrt(np.dot(delta_T, delta_T) / L) - MF_d_th
 
 
 class ProcessedStatistics:
