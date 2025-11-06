@@ -1,4 +1,4 @@
-import opticalcoating.visualisation as vis
+import coatipy.visualisation as vis
 from .statistics_info import StatInfo
 from .c_values import ProcessedStatistics
 from .design_class import Design

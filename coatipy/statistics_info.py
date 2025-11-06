@@ -7,7 +7,7 @@ import seaborn as sns
 from datetime import datetime
 from importlib.resources import files
 from .tools import find_file_name
-import opticalcoating.visualisation as vis
+import coatipy.visualisation as vis
 
 
 class StatInfo:

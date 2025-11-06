@@ -1,12 +1,23 @@
+import sys
+sys.path.append('d:\\home\\01_Projects\\Multilayer_Coatings\\Codebase\\Optical_coating_research_program')
+
+from pathlib import Path
+
 from scipy.interpolate import interp1d
 import json
 import os.path
 from math import inf
 from importlib.resources import files
-import opticalcoating.calc_flux as cf
-import opticalcoating.visualisation as vis
+import coatipy.calc_flux as cf
+import coatipy.visualisation as vis
 import numpy as np
 from .units import WidthForm
+from deprecated import deprecated
+
+from .cfg import cfg
+
+
+print()
 
 
 class Design:
@@ -22,7 +33,7 @@ class Design:
             raise NameError('Wrong initialisation Design.')
 
         if init_1:
-            fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
+            fname = Path(cfg["des_path"]).joinpath(f'{name}.json')
             with open(fname, 'r') as file:
                 self.info = json.load(file)
             self.name = self.info['name']
@@ -106,7 +117,25 @@ class Design:
                 break
         return ans
 
+    def to_json(self, *, name):
+        des_path = Path(cfg["des_path"])
+        if des_path.is_dir():
+            fname = des_path.joinpath(f'{name}.json')
+            if fname.exists():
+                raise FileExistsError(f"The design {name} is already exists in {fname}")
 
+            with open(fname, 'w') as des_file:
+                json.dump({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=3, fp=des_file)
+
+            print(f"File {fname} is successfully saved!")
+        else:
+            print(f"Directory {des_path} does not exist")
+
+
+    def from_json(self):
+        pass
+
+    @deprecated(reason="changed to_json method")
     def create_simple_json(self, *, name):
         # подразумевается, что есть только имя и вектора d и n
         fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
@@ -115,7 +144,7 @@ class Design:
                 inf = json.dumps({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=3)
                 print(inf, file=file)
 
-
+    @deprecated(reason="changed to_json method")
     def create_json(self):
         fname = files('opticalcoating.resources.Designs').joinpath(f'{self.name}.json')
         if os.path.isfile(fname):

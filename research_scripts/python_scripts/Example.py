@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../../')
-import opticalcoating as oc
+import coatipy as oc
 import multiprocessing as mp
 from os import listdir
 from importlib.resources import files

@@ -6,4 +6,5 @@ dependencies = [
   "plotly",
   "pandas",
   "seaborn",
+  "deprecated",
 ]
