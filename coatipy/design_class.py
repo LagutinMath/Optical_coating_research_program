@@ -2,22 +2,18 @@ import sys
 sys.path.append('d:\\home\\01_Projects\\Multilayer_Coatings\\Codebase\\Optical_coating_research_program')
 
 from pathlib import Path
+from .cfg import cfg
 
 from scipy.interpolate import interp1d
 import json
 import os.path
 from math import inf
-from importlib.resources import files
+
 import coatipy.calc_flux as cf
 import coatipy.visualisation as vis
 import numpy as np
 from .units import WidthForm
 from deprecated import deprecated
-
-from .cfg import cfg
-
-
-print()
 
 
 class Design:
@@ -137,8 +133,9 @@ class Design:
 
     @deprecated(reason="changed to_json method")
     def create_simple_json(self, *, name):
+        des_path = Path(cfg["des_path"])
         # подразумевается, что есть только имя и вектора d и n
-        fname = files('opticalcoating.resources.Designs').joinpath(f'{name}.json')
+        fname = des_path.joinpath(f'{name}.json')
         if not os.path.isfile(fname):
             with open(fname, 'w') as file:
                 inf = json.dumps({'name': name, 'thicknesses': self.d, 'n_const': self.n_const}, indent=3)
@@ -146,7 +143,8 @@ class Design:
 
     @deprecated(reason="changed to_json method")
     def create_json(self):
-        fname = files('opticalcoating.resources.Designs').joinpath(f'{self.name}.json')
+        des_path = Path(cfg["des_path"])
+        fname = des_path.joinpath(f'{self.name}.json')
         if os.path.isfile(fname):
             print(f'{fname} exists. Overwrite? (Y/N)')
             if input() not in ('Y','y'):

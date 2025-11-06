@@ -5,9 +5,12 @@ from matplotlib import rc
 import numpy as np
 import seaborn as sns
 from datetime import datetime
-from importlib.resources import files
+
 from .tools import find_file_name
 import coatipy.visualisation as vis
+
+from pathlib import Path
+from .cfg import cfg
 
 
 class StatInfo:
@@ -62,7 +65,7 @@ class StatInfo:
     @classmethod
     def load(cls, statistic_num):
         """Загружает данные проведенных симуляций как словарь"""
-        fname = files(f'opticalcoating.resources.Statistics').joinpath(
+        fname = Path(cfg["stat_path"]).joinpath(
             f'Statistic{str(statistic_num).zfill(3)}.json')
         with open(fname, 'r') as file: stat_dict = json.load(file)
         return cls(stat_dict)

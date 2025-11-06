@@ -2,11 +2,14 @@ import json
 import numpy as np
 from scipy.optimize import curve_fit
 from copy import deepcopy
-from importlib.resources import files
+
 from .calc_flux import calc_flux
 from .statistics_info import StatInfo
 from .design_class import Design
 from .target import Target
+
+from pathlib import Path
+from .cfg import cfg
 
 
 def merit(des, target, error=None, MF_d_th=0.0):
@@ -70,8 +73,7 @@ class ProcessedStatistics:
 
     @classmethod
     def load(cls, statistic_num):
-        fname = files('opticalcoating.resources.c_values').joinpath(
-            f'c_value{str(statistic_num).zfill(3)}.json')
+        fname = Path(cfg["c_values_path"]).joinpath(f'c_value{str(statistic_num).zfill(3)}.json')
         with open(fname, 'r') as file: info = json.load(file)
         info['statistic_num'] = statistic_num
         return cls(info)
@@ -85,8 +87,7 @@ class ProcessedStatistics:
                 'mean_delta_MF_rnd': self.mean_delta_MF_rnd,
                 'c_array': self.c_array.tolist()}
 
-        fname = files('opticalcoating.resources.c_values').joinpath(
-            f'c_value{str(self.statistic_num).zfill(3)}.json')
+        fname = Path(cfg["c_values_path"]).joinpath(f'c_value{str(self.statistic_num).zfill(3)}.json')
         with open(fname, 'w') as file:
             json.dump(info, file, indent=3)
         print(f'"c_value{str(self.statistic_num).zfill(3)}.json" is successfully saved')

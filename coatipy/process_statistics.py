@@ -1,9 +1,11 @@
 from os import listdir
-from importlib.resources import files
 import pandas as pd
 
 from .statistics_info import StatInfo
 from .c_values import ProcessedStatistics
+
+from pathlib import Path
+from .cfg import cfg
 
 def essential_info(info):
     info_set = set(info)
@@ -12,7 +14,8 @@ def essential_info(info):
     return ', '.join(seq)
 
 def stat_nums():
-    names = listdir(files(f'opticalcoating.resources.Statistics'))
+    names = listdir(Path(cfg["stat_path"]))
+
     return {int(name[9:12]) for name in names if name.startswith('Statistic')}
 
 
@@ -41,5 +44,5 @@ def process_statistics():
 
 
     df = pd.DataFrame(info_dct, index=stat_nums())
-    fname = files('opticalcoating.resources.c_values').joinpath('processed.xlsx')
+    fname = Path(cfg["stat_path"]).joinpath('processed.xlsx')
     df.transpose().to_excel(fname)

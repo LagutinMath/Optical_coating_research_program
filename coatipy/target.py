@@ -1,7 +1,11 @@
 import json
-from importlib.resources import files
+
 from datetime import datetime
 from .units import Wave
+
+from pathlib import Path
+from .cfg import cfg
+
 
 class Target:
     def __init__(self, name, waves, flux_target, creation_time=None, q_TR='T', dTa=None):
@@ -19,7 +23,7 @@ class Target:
 
     @classmethod
     def from_json(cls, name):
-        fname = files(f'opticalcoating.resources.Targets').joinpath(f'Target_{name}.json')
+        fname = Path(cfg["trg_path"]).joinpath(f'Target_{name}.json')
         with open(fname, 'r', encoding='utf-8') as file:
             dct = json.load(file)
         return cls(name=name,
@@ -40,6 +44,6 @@ class Target:
                'angle_list': [wave.angle for wave in self.waves],
                'flux_target': self.flux_target}
 
-        with open(f"../../opticalcoating/resources/Targets/Target_{self.name}.json",
-                  'w', encoding='utf-8') as file:
+        fname = Path(cfg["trg_path"]).joinpath(f'Target_{self.name}.json')
+        with open(fname, 'w', encoding='utf-8') as file:
             json.dump(dct, file, indent=3)
