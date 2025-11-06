@@ -1,15 +1,10 @@
 .idea/
 .ipynb_checkpoints/
+.venv/
 __pycache__/
-# Папки ниже предполагается, что
-# являются индивидуальными для каждого исследователя
+resourses/
 research_scripts/*
 opticalcoating/resources/*
 
-# Индивидуальные файлы разработчика lagutina-alena
-main.py
-lagutina_main.py
-optorun.py
-MATLAB_files/
 
 

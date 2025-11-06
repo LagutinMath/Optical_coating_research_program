@@ -1,0 +1,9 @@
+[project]
+name="OCRP"
+dependencies = [
+  "scipy",
+  "numpy",
+  "plotly",
+  "pandas",
+  "seaborn",
+]
